@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "Customer": {
+      "title": "Customer",
+      "description": "A client of the business",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The customer's full name" },
+        "phone": { "type": "string", "description": "The customer's phone number" },
+        "email": { "type": "string", "format": "email", "description": "The customer's email address" },
+        "address": { "type": "string", "description": "The customer's physical address" },
+        "notes": { "type": "string", "description": "Any additional notes about the customer" },
+        "createdAt": { "type": "string", "description": "The date the customer was first registered" },
+        "quotesCount": { "type": "number", "description": "The total number of quotes generated for this customer" }
+      },
+      "required": ["name", "phone", "createdAt"]
+    },
+    "Quote": {
+      "title": "Quote",
+      "description": "A formal quote generated for a customer",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string", "description": "The name of the customer" },
+        "customerPhone": { "type": "string", "description": "The phone number of the customer" },
+        "date": { "type": "string", "description": "The date the quote was generated" },
+        "total": { "type": "number", "description": "The total investment amount of the quote" },
+        "items": { "type": "array", "description": "The list of items included in the quote" }
+      },
+      "required": ["customerName", "date", "total", "items"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/customers/{customerId}": {
+      "schema": "Customer",
+      "description": "The collection of customers for a specific user"
+    },
+    "/users/{userId}/quotes/{quoteId}": {
+      "schema": "Quote",
+      "description": "The collection of quote history entries for a specific user"
+    }
+  }
+}
