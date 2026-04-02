@@ -1,4 +1,4 @@
-# Simple workflow for deploying static content to GitHub Pages - Fixed English version
+# Simple workflow for deploying static content to GitHub Pages - Fixed English version (v2)
 name: Deploy static content to Pages
 
 on:
