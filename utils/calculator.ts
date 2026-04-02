@@ -57,9 +57,9 @@ export const calculateQuote = (data: FormData, params: any, products: Product[])
       cost3D += (perimetroAprox * (letras3d_grosor || 0)) * materialPriceCm2;
     }
 
-    costVinilo = ((vinilo_w || 0) * (vinilo_h || 0)) * 2.4;
-    costLona = ((lona_w || 0) * (lona_h || 0)) * 2.3; // Actualizado de 1.3 a 2.3
-    costLED = (led_cm || 0) * 130;
+    costVinilo = ((vinilo_w || 0) * (vinilo_h || 0)) * (params.vinilo_factor || 2.4);
+    costLona = ((lona_w || 0) * (lona_h || 0)) * (params.lona_factor || 2.3);
+    costLED = (led_cm || 0) * (params.led_cost_per_cm || 130);
     costFondo = ((fondo_w || 0) * (fondo_h || 0)) * materialPriceCm2;
     costFuente = include_power_supply ? (params.power_supply_cost || 80000) : 0;
 
@@ -105,7 +105,16 @@ export const calculateQuote = (data: FormData, params: any, products: Product[])
   const totalBeforeMargin = subtotalBeforeWaste + wasteCost + installCostCalculated + (transport || 0);
   
   const margin = customer_type === 'final' ? params.profit_margin_final : params.profit_margin_publisher;
-  const costWithMargin = totalBeforeMargin * (1 + margin);
+  let costWithMargin = totalBeforeMargin * (1 + margin);
+  
+  // Apply custom factors
+  (params.custom_factors || []).forEach((f: any) => {
+    if (f.type === 'multiplier') {
+      costWithMargin *= (1 + f.value);
+    } else if (f.type === 'fixed') {
+      costWithMargin += f.value;
+    }
+  });
   
   const ivaAmount = customer_type === 'final' ? costWithMargin * params.iva : 0;
   const finalPrice = Math.ceil((costWithMargin + ivaAmount) / 100) * 100;

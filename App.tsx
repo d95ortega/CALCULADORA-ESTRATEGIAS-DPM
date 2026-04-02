@@ -97,46 +97,49 @@ const App: React.FC = () => {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [authorizedUsers, setAuthorizedUsers] = useState<any[]>([]);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const OWNER_EMAIL = 'estrategiaslaunion@gmail.com';
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
-      if (u) {
-        // Check authorization
-        const isOwner = u.email === OWNER_EMAIL;
-        const authDocRef = doc(db, 'authorized_users', u.email || '');
-        
-        try {
-          const authSnap = await getDocFromServer(authDocRef);
-          const isWhitelisted = authSnap.exists();
-          const role = authSnap.data()?.role;
-          
-          if (isOwner || isWhitelisted) {
-            setIsAuthorized(true);
-            setIsAdmin(isOwner || role === 'admin');
-          } else {
-            setIsAuthorized(false);
-            setIsAdmin(false);
-          }
-        } catch (error) {
-          console.error("Auth check error:", error);
-          if (isOwner) {
-            setIsAuthorized(true);
-            setIsAdmin(true);
-          } else {
-            setIsAuthorized(false);
-          }
-        }
-      } else {
-        setIsAuthorized(null);
-        setIsAdmin(false);
-      }
       setIsAuthReady(true);
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setIsAuthorized(null);
+      setIsAdmin(false);
+      return;
+    }
+
+    const checkAuth = async () => {
+      const isOwner = user.email === OWNER_EMAIL;
+      const authDocRef = doc(db, 'authorized_users', user.email || '');
+      
+      try {
+        const authSnap = await getDocFromServer(authDocRef);
+        if (authSnap.exists()) {
+          const role = authSnap.data()?.role;
+          setIsAuthorized(true);
+          setIsAdmin(isOwner || role === 'admin');
+        } else {
+          setIsAuthorized(isOwner);
+          setIsAdmin(isOwner);
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        // Fallback for owner if Firestore is blocked or rules are not deployed
+        setIsAuthorized(isOwner);
+        setIsAdmin(isOwner);
+      }
+    };
+
+    checkAuth();
+  }, [user]);
 
   // Sync Authorized Users (Admin only)
   useEffect(() => {
@@ -305,10 +308,16 @@ const App: React.FC = () => {
   };
 
   const login = async () => {
+    setLoginError(null);
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error", error);
+      if (error.code === 'auth/popup-blocked') {
+        setLoginError("El navegador bloqueó la ventana emergente. Por favor, permite las ventanas emergentes.");
+      } else {
+        setLoginError("Error al iniciar sesión: " + (error.message || "Inténtalo de nuevo"));
+      }
     }
   };
 
@@ -442,6 +451,11 @@ const App: React.FC = () => {
             <h1 className="text-4xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Calculadora DPM</h1>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-3">Acceso Restringido Personal</p>
           </div>
+          {loginError && (
+            <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-[10px] font-bold uppercase border border-red-100 animate-in fade-in slide-in-from-top-2">
+              {loginError}
+            </div>
+          )}
           <button 
             onClick={login}
             className="w-full bg-slate-900 text-white py-5 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-3 active:scale-95"
@@ -527,7 +541,7 @@ const App: React.FC = () => {
               <button onClick={() => setActiveSettingsTab('products')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'products' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Productos</button>
               <button onClick={() => setActiveSettingsTab('costs')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'costs' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Acrílico</button>
               <button onClick={() => setActiveSettingsTab('params')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'params' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Parámetros</button>
-              <button onClick={() => setActiveSettingsTab('brand')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'brand' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Empresa</button>
+              <button onClick={() => setActiveSettingsTab('brand')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'brand' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Marca y Logo</button>
               <button onClick={() => setActiveSettingsTab('customers')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'customers' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Clientes</button>
               <button onClick={() => setActiveSettingsTab('history')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'history' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Historial</button>
               {isAdmin && (
@@ -593,17 +607,167 @@ const App: React.FC = () => {
                 </div>
               )}
               {activeSettingsTab === 'params' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Tarifa Hora Laboral ($)</label><input type="number" value={params.hourly_rate} onChange={e => setParams({...params, hourly_rate: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Porcentaje IVA (0.19)</label><input type="number" step="0.01" value={params.iva} onChange={e => setParams({...params, iva: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Margen Utilidad Final (0.35)</label><input type="number" step="0.01" value={params.profit_margin_final} onChange={e => setParams({...params, profit_margin_final: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Margen Utilidad Publi (0.20)</label><input type="number" step="0.01" value={params.profit_margin_publisher} onChange={e => setParams({...params, profit_margin_publisher: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Costo Fijo Diseño ($)</label><input type="number" value={params.design_fixed_cost} onChange={e => setParams({...params, design_fixed_cost: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Mínimo Operativo ($)</label><input type="number" value={params.min_operative} onChange={e => setParams({...params, min_operative: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Factor Desperdicio (0.20)</label><input type="number" step="0.01" value={params.waste} onChange={e => setParams({...params, waste: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Costo Fuente LED ($)</label><input type="number" value={params.power_supply_cost} onChange={e => setParams({...params, power_supply_cost: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Costo Ojal ($)</label><input type="number" value={params.ojal_cost} onChange={e => setParams({...params, ojal_cost: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Costo Tubo (Factor)</label><input type="number" value={params.tube_cost_factor} onChange={e => setParams({...params, tube_cost_factor: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
+                <div className="space-y-6">
+                  <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex gap-3 items-start">
+                    <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-[11px] font-black text-blue-900 uppercase tracking-tight">Guía de Parámetros</p>
+                      <p className="text-[10px] text-blue-700 font-medium leading-relaxed mt-1">
+                        Estos valores afectan directamente el cálculo de todas las cotizaciones. Los márgenes de utilidad se aplican después de sumar todos los costos base.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase">Tarifa Hora Laboral ($)</label>
+                        <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Mano de Obra</span>
+                      </div>
+                      <input type="number" value={params.hourly_rate} onChange={e => setParams({...params, hourly_rate: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase">Porcentaje IVA (0.19)</label>
+                        <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Impuestos</span>
+                      </div>
+                      <input type="number" step="0.01" value={params.iva} onChange={e => setParams({...params, iva: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase">Margen Utilidad Final (0.35)</label>
+                        <span className="text-[8px] bg-green-50 px-1.5 py-0.5 rounded text-green-600 font-bold uppercase">Ganancia</span>
+                      </div>
+                      <input type="number" step="0.01" value={params.profit_margin_final} onChange={e => setParams({...params, profit_margin_final: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase">Margen Utilidad Publi (0.20)</label>
+                        <span className="text-[8px] bg-green-50 px-1.5 py-0.5 rounded text-green-600 font-bold uppercase">Ganancia</span>
+                      </div>
+                      <input type="number" step="0.01" value={params.profit_margin_publisher} onChange={e => setParams({...params, profit_margin_publisher: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase">Factor Vinilo (Acrílico)</label>
+                        <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Multiplicador</span>
+                      </div>
+                      <input type="number" step="0.1" value={params.vinilo_factor || 2.4} onChange={e => setParams({...params, vinilo_factor: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase">Factor Lona (Acrílico)</label>
+                        <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Multiplicador</span>
+                      </div>
+                      <input type="number" step="0.1" value={params.lona_factor || 2.3} onChange={e => setParams({...params, lona_factor: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase">Costo LED por cm ($)</label>
+                        <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Material</span>
+                      </div>
+                      <input type="number" value={params.led_cost_per_cm || 130} onChange={e => setParams({...params, led_cost_per_cm: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase">Costo Fijo Diseño ($)</label>
+                        <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Servicio</span>
+                      </div>
+                      <input type="number" value={params.design_fixed_cost} onChange={e => setParams({...params, design_fixed_cost: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase">Mínimo Operativo ($)</label>
+                        <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Base</span>
+                      </div>
+                      <input type="number" value={params.min_operative} onChange={e => setParams({...params, min_operative: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase">Factor Desperdicio (0.20)</label>
+                        <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Seguridad</span>
+                      </div>
+                      <input type="number" step="0.01" value={params.waste} onChange={e => setParams({...params, waste: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b pb-2 flex items-center gap-2">
+                      <PlusCircle className="w-4 h-4" /> Factores Adicionales Personalizados
+                    </h4>
+                    <div className="bg-slate-50 p-6 rounded-3xl space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input type="text" id="new-factor-name" placeholder="Nombre (ej: Seguro)" className="bg-white p-3 rounded-xl text-xs font-bold ring-1 ring-slate-200 outline-none" />
+                        <input type="number" id="new-factor-value" placeholder="Valor (0.05 o 5000)" className="bg-white p-3 rounded-xl text-xs font-bold ring-1 ring-slate-200 outline-none" />
+                        <select id="new-factor-type" className="bg-white p-3 rounded-xl text-xs font-bold ring-1 ring-slate-200 outline-none">
+                          <option value="multiplier">Multiplicador (%)</option>
+                          <option value="fixed">Costo Fijo ($)</option>
+                        </select>
+                      </div>
+                      <button onClick={() => {
+                        const name = (document.getElementById('new-factor-name') as HTMLInputElement).value;
+                        const value = parseFloat((document.getElementById('new-factor-value') as HTMLInputElement).value);
+                        const type = (document.getElementById('new-factor-type') as HTMLSelectElement).value as 'multiplier' | 'fixed';
+                        if (name && !isNaN(value)) {
+                          setParams({
+                            ...params,
+                            custom_factors: [...(params.custom_factors || []), { id: Math.random().toString(36).substr(2, 9), name, value, type }]
+                          });
+                          (document.getElementById('new-factor-name') as HTMLInputElement).value = '';
+                          (document.getElementById('new-factor-value') as HTMLInputElement).value = '';
+                        }
+                      }} className="w-full brand-bg text-white py-3 rounded-xl text-[10px] font-black uppercase">Añadir Factor</button>
+                    </div>
+                    <div className="space-y-2">
+                      {(params.custom_factors || []).map((f: any, idx: number) => (
+                        <div key={f.id} className="bg-white p-4 rounded-2xl border flex justify-between items-center group">
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-tight">{f.name}</p>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                              {f.type === 'multiplier' ? `+${(f.value * 100).toFixed(1)}% al total` : `+$${f.value.toLocaleString()} fijo`}
+                            </p>
+                          </div>
+                          <button onClick={() => {
+                            const updated = params.custom_factors.filter((_: any, i: number) => i !== idx);
+                            setParams({...params, custom_factors: updated});
+                          }} className="text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4"/></button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900 p-6 rounded-3xl space-y-4">
+                    <h4 className="text-[11px] font-black uppercase brand-text flex items-center gap-2">
+                      <PieChart className="w-4 h-4" /> ¿Cómo se calcula el precio?
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Costo Base</span>
+                        <span className="text-[10px] font-black text-white uppercase">Materiales + Mano de Obra + Diseño</span>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Subtotal</span>
+                        <span className="text-[10px] font-black text-white uppercase">Costo Base + Desperdicio + Transporte</span>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Precio con Margen</span>
+                        <span className="text-[10px] font-black text-white uppercase">Subtotal × (1 + Margen Utilidad)</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Precio Final</span>
+                        <span className="text-[10px] font-black text-white uppercase">Precio con Margen + IVA (Solo Final)</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
               {activeSettingsTab === 'brand' && (

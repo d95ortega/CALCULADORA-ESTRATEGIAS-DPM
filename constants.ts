@@ -14,7 +14,11 @@ export const DEFAULT_PARAMS = {
   ojal_cost: 400,
   stick_cost: 5000,
   tapon_cost: 800,
-  power_supply_cost: 80000, // Añadido costo de fuente (asumido 80.000 COP)
+  power_supply_cost: 80000,
+  vinilo_factor: 2.4,
+  lona_factor: 2.3,
+  led_cost_per_cm: 130,
+  custom_factors: [] as { id: string, name: string, value: number, type: 'multiplier' | 'fixed' }[],
   roll_widths: [75, 102, 122, 152],
   // Materiales de Acrílico específicos basados en la imagen del usuario
   acrylic_materials: [
