@@ -1,5 +1,16 @@
 {
   "entities": {
+    "AuthorizedUser": {
+      "title": "Authorized User",
+      "description": "A user authorized to access the company's application",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email", "description": "The user's email address" },
+        "role": { "type": "string", "enum": ["admin", "user"], "description": "The user's role (admin or user)" },
+        "addedAt": { "type": "string", "description": "When the user was added to the whitelist" }
+      },
+      "required": ["email", "role"]
+    },
     "Customer": {
       "title": "Customer",
       "description": "A client of the business",
@@ -30,13 +41,21 @@
     }
   },
   "firestore": {
-    "/users/{userId}/customers/{customerId}": {
-      "schema": "Customer",
-      "description": "The collection of customers for a specific user"
+    "/authorized_users/{email}": {
+      "schema": "AuthorizedUser",
+      "description": "The list of emails authorized to access the application"
     },
-    "/users/{userId}/quotes/{quoteId}": {
+    "/company_data/dpm/customers/{customerId}": {
+      "schema": "Customer",
+      "description": "The shared collection of customers for the company"
+    },
+    "/company_data/dpm/quotes/{quoteId}": {
       "schema": "Quote",
-      "description": "The collection of quote history entries for a specific user"
+      "description": "The shared collection of quote history for the company"
+    },
+    "/company_data/dpm/settings/current": {
+      "schema": "object",
+      "description": "The shared settings (brand, params, products) for the company"
     }
   }
 }

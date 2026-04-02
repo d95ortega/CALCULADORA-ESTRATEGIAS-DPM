@@ -80,5 +80,5 @@ async function testConnection() {
 }
 testConnection();
 
-export { signInWithPopup, signOut, onAuthStateChanged, collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, doc, setDoc };
+export { signInWithPopup, signOut, onAuthStateChanged, collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, doc, setDoc, getDocFromServer };
 export type { User };

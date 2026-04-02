@@ -40,10 +40,19 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function isAuthorized() {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/authorized_users/$(request.auth.token.email)) ||
+        (request.auth.token.email == "estrategiaslaunion@gmail.com" && request.auth.token.email_verified == true)
+      );
+    }
+
     function isAdmin() {
-      return isAuthenticated() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-          (request.auth.token.email == "estrategiaslaunion@gmail.com" && request.auth.token.email_verified == true));
+      return isAuthenticated() && (
+        (exists(/databases/$(database)/documents/authorized_users/$(request.auth.token.email)) && 
+         get(/databases/$(database)/documents/authorized_users/$(request.auth.token.email)).data.role == 'admin') ||
+        (request.auth.token.email == "estrategiaslaunion@gmail.com" && request.auth.token.email_verified == true)
+      );
     }
 
     function isValidEmail(email) {
@@ -63,6 +72,13 @@ service cloud.firestore {
     // ===============================================================
     // Domain Validators
     // ===============================================================
+
+    function isValidAuthorizedUser(data) {
+      return hasOnlyAllowedFields(['email', 'role', 'addedAt']) &&
+             isValidEmail(data.email) &&
+             data.role in ['admin', 'user'] &&
+             isValidDateString(data.addedAt);
+    }
 
     function isValidCustomer(data) {
       return hasOnlyAllowedFields(['name', 'phone', 'email', 'address', 'notes', 'createdAt', 'quotesCount']) &&
@@ -88,21 +104,35 @@ service cloud.firestore {
     // Rules
     // ===============================================================
 
-    match /users/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
+    match /authorized_users/{email} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidAuthorizedUser(request.resource.data);
+    }
 
+    match /company_data/dpm {
       match /customers/{customerId} {
-        allow read: if isOwner(userId) || isAdmin();
-        allow create: if (isOwner(userId) || isAdmin()) && isValidCustomer(request.resource.data);
-        allow update: if (isOwner(userId) || isAdmin()) && isValidCustomer(request.resource.data);
-        allow delete: if isOwner(userId) || isAdmin();
+        allow read: if isAuthorized();
+        allow create, update: if isAuthorized() && isValidCustomer(request.resource.data);
+        allow delete: if isAdmin();
       }
 
       match /quotes/{quoteId} {
-        allow read: if isOwner(userId) || isAdmin();
-        allow create: if (isOwner(userId) || isAdmin()) && isValidQuote(request.resource.data);
-        allow update: if (isOwner(userId) || isAdmin()) && isValidQuote(request.resource.data);
-        allow delete: if isOwner(userId) || isAdmin();
+        allow read: if isAuthorized();
+        allow create, update: if isAuthorized() && isValidQuote(request.resource.data);
+        allow delete: if isAdmin();
+      }
+
+      match /settings/current {
+        allow read: if isAuthorized();
+        allow write: if isAdmin();
+      }
+    }
+
+    // Keep legacy rules for migration if needed, but restrict to owners
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+      match /{allPaths=**} {
+        allow read, write: if isOwner(userId) || isAdmin();
       }
     }
   }

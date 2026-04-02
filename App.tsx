@@ -15,7 +15,7 @@ import html2canvas from 'html2canvas';
 import { 
   auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged, 
   collection, query, where, onSnapshot, doc, setDoc, addDoc, updateDoc, deleteDoc, 
-  handleFirestoreError, OperationType, User 
+  handleFirestoreError, OperationType, User, getDocFromServer 
 } from './firebase';
 
 // Firebase integration
@@ -90,23 +90,89 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : [];
   });
   const [showSettings, setShowSettings] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState<'products' | 'brand' | 'costs' | 'params' | 'customers' | 'history'>('products');
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'products' | 'brand' | 'costs' | 'params' | 'customers' | 'history' | 'users'>('products');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [authorizedUsers, setAuthorizedUsers] = useState<any[]>([]);
+
+  const OWNER_EMAIL = 'estrategiaslaunion@gmail.com';
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setUser(u);
+      if (u) {
+        // Check authorization
+        const isOwner = u.email === OWNER_EMAIL;
+        const authDocRef = doc(db, 'authorized_users', u.email || '');
+        
+        try {
+          const authSnap = await getDocFromServer(authDocRef);
+          const isWhitelisted = authSnap.exists();
+          const role = authSnap.data()?.role;
+          
+          if (isOwner || isWhitelisted) {
+            setIsAuthorized(true);
+            setIsAdmin(isOwner || role === 'admin');
+          } else {
+            setIsAuthorized(false);
+            setIsAdmin(false);
+          }
+        } catch (error) {
+          console.error("Auth check error:", error);
+          if (isOwner) {
+            setIsAuthorized(true);
+            setIsAdmin(true);
+          } else {
+            setIsAuthorized(false);
+          }
+        }
+      } else {
+        setIsAuthorized(null);
+        setIsAdmin(false);
+      }
       setIsAuthReady(true);
     });
     return () => unsubscribe();
   }, []);
 
-  // Sync Customers from Firestore
+  // Sync Authorized Users (Admin only)
   useEffect(() => {
-    if (!user || !isAuthReady) return;
-    const path = `users/${user.uid}/customers`;
+    if (!user || !isAuthorized || !isAdmin) return;
+    const path = 'authorized_users';
+    const q = query(collection(db, path));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAuthorizedUsers(data);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, path);
+    });
+    return () => unsubscribe();
+  }, [user, isAuthorized, isAdmin]);
+
+  // Sync Shared Settings
+  useEffect(() => {
+    if (!user || !isAuthorized) return;
+    const path = 'company_data/dpm/settings/current';
+    const unsubscribe = onSnapshot(doc(db, path), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data.brand) setBrand(data.brand);
+        if (data.params) setParams(data.params);
+        if (data.products) setProducts(data.products);
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, path);
+    });
+    return () => unsubscribe();
+  }, [user, isAuthorized]);
+
+  // Sync Shared Customers
+  useEffect(() => {
+    if (!user || !isAuthorized) return;
+    const path = 'company_data/dpm/customers';
     const q = query(collection(db, path));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
@@ -115,12 +181,12 @@ const App: React.FC = () => {
       handleFirestoreError(error, OperationType.LIST, path);
     });
     return () => unsubscribe();
-  }, [user, isAuthReady]);
+  }, [user, isAuthorized]);
 
-  // Sync History from Firestore
+  // Sync Shared History
   useEffect(() => {
-    if (!user || !isAuthReady) return;
-    const path = `users/${user.uid}/quotes`;
+    if (!user || !isAuthorized) return;
+    const path = 'company_data/dpm/quotes';
     const q = query(collection(db, path));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as QuoteHistoryEntry));
@@ -129,7 +195,17 @@ const App: React.FC = () => {
       handleFirestoreError(error, OperationType.LIST, path);
     });
     return () => unsubscribe();
-  }, [user, isAuthReady]);
+  }, [user, isAuthorized]);
+
+  const saveSharedSettings = async () => {
+    if (!isAdmin) return;
+    const path = 'company_data/dpm/settings/current';
+    try {
+      await setDoc(doc(db, path), { brand, params, products });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, path);
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem('dpm_params', JSON.stringify(params));
@@ -181,8 +257,8 @@ const App: React.FC = () => {
       total: total
     };
 
-    if (user) {
-      const path = `users/${user.uid}/quotes`;
+    if (user && isAuthorized) {
+      const path = 'company_data/dpm/quotes';
       try {
         await addDoc(collection(db, path), newEntry);
       } catch (error) {
@@ -202,8 +278,8 @@ const App: React.FC = () => {
         quotesCount: 1
       };
 
-      if (user) {
-        const path = `users/${user.uid}/customers`;
+      if (user && isAuthorized) {
+        const path = 'company_data/dpm/customers';
         try {
           const existing = customers.find(c => c.name.toLowerCase() === customerInfo.name.toLowerCase());
           if (existing) {
@@ -225,6 +301,7 @@ const App: React.FC = () => {
         });
       }
     }
+    setQuoteJobs([]);
   };
 
   const login = async () => {
@@ -244,8 +321,8 @@ const App: React.FC = () => {
   };
 
   const handleDeleteCustomer = async (id: string) => {
-    if (user) {
-      const path = `users/${user.uid}/customers`;
+    if (user && isAuthorized) {
+      const path = `company_data/dpm/customers`;
       try {
         await deleteDoc(doc(db, path, id));
       } catch (error) {
@@ -257,8 +334,8 @@ const App: React.FC = () => {
   };
 
   const handleDeleteQuote = async (id: string) => {
-    if (user) {
-      const path = `users/${user.uid}/quotes`;
+    if (user && isAuthorized) {
+      const path = `company_data/dpm/quotes`;
       try {
         await deleteDoc(doc(db, path, id));
       } catch (error) {
@@ -266,6 +343,42 @@ const App: React.FC = () => {
       }
     } else {
       setHistory(prev => prev.filter(h => h.id !== id));
+    }
+  };
+
+  const addAuthorizedUser = async (email: string) => {
+    if (!isAdmin || !email) return;
+    const path = 'authorized_users';
+    try {
+      await setDoc(doc(db, path, email.toLowerCase()), {
+        email: email.toLowerCase(),
+        role: 'user',
+        addedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, path);
+    }
+  };
+
+  const removeAuthorizedUser = async (email: string) => {
+    if (!isAdmin || email === OWNER_EMAIL) return;
+    const path = 'authorized_users';
+    try {
+      await deleteDoc(doc(db, path, email));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, path);
+    }
+  };
+
+  const toggleUserRole = async (email: string, currentRole: string) => {
+    if (!isAdmin || email === OWNER_EMAIL) return;
+    const path = 'authorized_users';
+    try {
+      await updateDoc(doc(db, path, email), {
+        role: currentRole === 'admin' ? 'user' : 'admin'
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
     }
   };
 
@@ -294,6 +407,83 @@ const App: React.FC = () => {
     message += `*TOTAL INVERSIÓN: $${Math.round(total).toLocaleString()}*\n\n_Revisa el PDF para ver el detalle de materiales e IVA._`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBrand((prev: any) => ({ ...prev, logo: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeLogo = () => {
+    setBrand((prev: any) => ({ ...prev, logo: null }));
+  };
+
+  if (!isAuthReady) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <Loader2 className="w-12 h-12 brand-text animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden p-10 text-center space-y-8 animate-in zoom-in-95">
+          <div className="w-24 h-24 brand-bg rounded-3xl mx-auto flex items-center justify-center shadow-2xl shadow-red-500/20 rotate-3">
+            <Calculator className="w-12 h-12 text-white" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Calculadora DPM</h1>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-3">Acceso Restringido Personal</p>
+          </div>
+          <button 
+            onClick={login}
+            className="w-full bg-slate-900 text-white py-5 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-3 active:scale-95"
+          >
+            <LogIn className="w-5 h-5" /> Iniciar con Google
+          </button>
+          <p className="text-[9px] text-slate-400 font-bold uppercase leading-relaxed">
+            Solo personal autorizado de <span className="brand-text">Estrategias DPM</span> tiene acceso a esta herramienta.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthorized === false) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden p-10 text-center space-y-8 animate-in zoom-in-95">
+          <div className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl mx-auto flex items-center justify-center">
+            <ShieldCheck className="w-10 h-10" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Acceso Denegado</h1>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-3">Usuario No Autorizado</p>
+          </div>
+          <div className="bg-slate-50 p-6 rounded-2xl text-left space-y-2">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tu correo:</p>
+            <p className="text-xs font-bold text-slate-900">{user.email}</p>
+          </div>
+          <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
+            Tu cuenta no está en la lista de personal autorizado. Por favor, contacta al administrador para solicitar acceso.
+          </p>
+          <button 
+            onClick={logout}
+            className="w-full bg-slate-100 text-slate-600 py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-3"
+          >
+            <LogOut className="w-5 h-5" /> Salir
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-10">
@@ -340,6 +530,9 @@ const App: React.FC = () => {
               <button onClick={() => setActiveSettingsTab('brand')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'brand' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Empresa</button>
               <button onClick={() => setActiveSettingsTab('customers')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'customers' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Clientes</button>
               <button onClick={() => setActiveSettingsTab('history')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'history' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Historial</button>
+              {isAdmin && (
+                <button onClick={() => setActiveSettingsTab('users')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'users' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Accesos</button>
+              )}
             </div>
             <div className="p-6 max-h-[60vh] overflow-y-auto no-scrollbar space-y-6">
               {activeSettingsTab === 'products' && (
@@ -365,30 +558,81 @@ const App: React.FC = () => {
                 </div>
               )}
               {activeSettingsTab === 'costs' && (
-                <div className="space-y-4">
-                  <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b pb-2">Materiales Acrílico DPM (cm²)</h4>
-                  {params.acrylic_materials.map((m: any, idx: number) => (
-                    <div key={m.id} className="bg-slate-50 p-4 rounded-2xl border flex gap-4 items-center">
-                      <input type="text" value={m.name} onChange={e => { const updated = [...params.acrylic_materials]; updated[idx].name = e.target.value; setParams({...params, acrylic_materials: updated}); }} className="flex-1 bg-white p-3 rounded-xl text-xs font-bold ring-1 ring-slate-100" />
-                      <div className="relative w-32"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">$</span><input type="number" step="0.001" value={m.cost_per_cm2} onChange={e => { const updated = [...params.acrylic_materials]; updated[idx].cost_per_cm2 = parseFloat(e.target.value) || 0; setParams({...params, acrylic_materials: updated}); }} className="w-full p-3 pl-5 bg-white rounded-xl text-xs font-bold ring-1 ring-slate-100" /></div>
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b pb-2">Materiales Acrílico DPM (cm²)</h4>
+                    {params.acrylic_materials.map((m: any, idx: number) => (
+                      <div key={m.id} className="bg-slate-50 p-4 rounded-2xl border flex gap-4 items-center">
+                        <input type="text" value={m.name} onChange={e => { const updated = [...params.acrylic_materials]; updated[idx].name = e.target.value; setParams({...params, acrylic_materials: updated}); }} className="flex-1 bg-white p-3 rounded-xl text-xs font-bold ring-1 ring-slate-100" />
+                        <div className="relative w-32"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">$</span><input type="number" step="0.001" value={m.cost_per_cm2} onChange={e => { const updated = [...params.acrylic_materials]; updated[idx].cost_per_cm2 = parseFloat(e.target.value) || 0; setParams({...params, acrylic_materials: updated}); }} className="w-full p-3 pl-5 bg-white rounded-xl text-xs font-bold ring-1 ring-slate-100" /></div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-widest border-b pb-2">Precios de Bases (m²)</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Estructura Acrílico</label>
+                        <input type="number" value={params.base_prices.estructura_acrilico} onChange={e => setParams({...params, base_prices: {...params.base_prices, estructura_acrilico: parseFloat(e.target.value)||0}})} className="w-full p-3 bg-slate-50 rounded-xl text-xs font-bold ring-1 ring-slate-100" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Estructura Lona</label>
+                        <input type="number" value={params.base_prices.estructura_lona} onChange={e => setParams({...params, base_prices: {...params.base_prices, estructura_lona: parseFloat(e.target.value)||0}})} className="w-full p-3 bg-slate-50 rounded-xl text-xs font-bold ring-1 ring-slate-100" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black text-slate-400 uppercase ml-1">MDF</label>
+                        <input type="number" value={params.base_prices.mdf} onChange={e => setParams({...params, base_prices: {...params.base_prices, mdf: parseFloat(e.target.value)||0}})} className="w-full p-3 bg-slate-50 rounded-xl text-xs font-bold ring-1 ring-slate-100" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Extra Iluminación</label>
+                        <input type="number" value={params.lighting_extra} onChange={e => setParams({...params, lighting_extra: parseFloat(e.target.value)||0})} className="w-full p-3 bg-slate-50 rounded-xl text-xs font-bold ring-1 ring-slate-100" />
+                      </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
               )}
               {activeSettingsTab === 'params' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Tarifa Hora Laboral ($)</label><input type="number" value={params.hourly_rate} onChange={e => setParams({...params, hourly_rate: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Porcentaje IVA (0.19)</label><input type="number" step="0.01" value={params.iva} onChange={e => setParams({...params, iva: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Costo Fuente LED ($)</label><input type="number" value={params.power_supply_cost} onChange={e => setParams({...params, power_supply_cost: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Margen Utilidad Final (0.35)</label><input type="number" step="0.01" value={params.profit_margin_final} onChange={e => setParams({...params, profit_margin_final: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Margen Utilidad Publi (0.20)</label><input type="number" step="0.01" value={params.profit_margin_publisher} onChange={e => setParams({...params, profit_margin_publisher: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Costo Fijo Diseño ($)</label><input type="number" value={params.design_fixed_cost} onChange={e => setParams({...params, design_fixed_cost: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Mínimo Operativo ($)</label><input type="number" value={params.min_operative} onChange={e => setParams({...params, min_operative: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Factor Desperdicio (0.20)</label><input type="number" step="0.01" value={params.waste} onChange={e => setParams({...params, waste: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Costo Fuente LED ($)</label><input type="number" value={params.power_supply_cost} onChange={e => setParams({...params, power_supply_cost: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Costo Ojal ($)</label><input type="number" value={params.ojal_cost} onChange={e => setParams({...params, ojal_cost: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Margen de Utilidad (0.35)</label><input type="number" step="0.01" value={params.profit_margin_final} onChange={e => setParams({...params, profit_margin_final: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Costo Tubo (Factor)</label><input type="number" value={params.tube_cost_factor} onChange={e => setParams({...params, tube_cost_factor: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
                 </div>
               )}
               {activeSettingsTab === 'brand' && (
                 <div className="space-y-4">
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Nombre Empresa</label><input type="text" placeholder="Empresa" value={brand.companyName} onChange={e => setBrand({...brand, companyName: e.target.value})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">WhatsApp</label><input type="text" placeholder="WhatsApp" value={brand.phone} onChange={e => setBrand({...brand, phone: e.target.value})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
+                  <div className="flex flex-col items-center gap-4 p-6 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                    {brand.logo ? (
+                      <div className="relative group">
+                        <img src={brand.logo} alt="Logo Empresa" className="w-32 h-32 object-contain rounded-xl bg-white p-2 shadow-md" referrerPolicy="no-referrer" />
+                        <button onClick={removeLogo} className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-4 h-4" /></button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center"><ImageIcon className="w-8 h-8 text-slate-400" /></div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase">Sin Logo Cargado</p>
+                      </div>
+                    )}
+                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" id="logo-upload" />
+                    <label htmlFor="logo-upload" className="brand-bg text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase cursor-pointer hover:opacity-90 transition-all flex items-center gap-2">
+                      <UploadCloud className="w-4 h-4" /> {brand.logo ? "Cambiar Logo" : "Subir Logo"}
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Nombre Empresa</label><input type="text" placeholder="Empresa" value={brand.companyName} onChange={e => setBrand({...brand, companyName: e.target.value})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
+                    <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Eslogan</label><input type="text" placeholder="Eslogan" value={brand.slogan} onChange={e => setBrand({...brand, slogan: e.target.value})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
+                    <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">WhatsApp</label><input type="text" placeholder="WhatsApp" value={brand.phone} onChange={e => setBrand({...brand, phone: e.target.value})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
+                    <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Email</label><input type="text" placeholder="Email" value={brand.email} onChange={e => setBrand({...brand, email: e.target.value})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
+                    <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black text-slate-400 uppercase">Dirección</label><input type="text" placeholder="Dirección" value={brand.address} onChange={e => setBrand({...brand, address: e.target.value})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
+                    <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">NIT / Identificación</label><input type="text" placeholder="NIT" value={brand.taxId} onChange={e => setBrand({...brand, taxId: e.target.value})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" /></div>
+                  </div>
                 </div>
               )}
               {activeSettingsTab === 'customers' && (
@@ -463,8 +707,58 @@ const App: React.FC = () => {
                   </div>
                 </div>
               )}
+              {activeSettingsTab === 'users' && isAdmin && (
+                <div className="space-y-6">
+                  <div className="bg-slate-900 p-6 rounded-3xl space-y-4">
+                    <h4 className="text-[10px] font-black uppercase brand-text flex items-center gap-2"><PlusCircle className="w-3 h-3"/> Autorizar Personal</h4>
+                    <div className="flex gap-2">
+                      <input type="email" id="new-user-email" placeholder="email@gmail.com" className="flex-1 bg-slate-800 p-3 rounded-xl text-white text-xs font-bold border-none ring-1 ring-slate-700 outline-none" />
+                      <button onClick={() => {
+                        const input = document.getElementById('new-user-email') as HTMLInputElement;
+                        if (input.value) {
+                          addAuthorizedUser(input.value);
+                          input.value = '';
+                        }
+                      }} className="brand-bg text-white px-6 rounded-xl text-[10px] font-black uppercase">Añadir</button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {authorizedUsers.map(u => (
+                      <div key={u.id} className="bg-slate-50 p-4 rounded-2xl border flex justify-between items-center group">
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-tight flex items-center gap-2">
+                            {u.email}
+                            {u.email === OWNER_EMAIL && <span className="text-[8px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded uppercase">Propietario</span>}
+                          </p>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Rol: {u.role}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          {u.email !== OWNER_EMAIL && (
+                            <>
+                              <button onClick={() => toggleUserRole(u.email, u.role)} className="bg-white p-2 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-all shadow-sm"><ShieldCheck className="w-4 h-4"/></button>
+                              <button onClick={() => removeAuthorizedUser(u.email)} className="bg-white p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm"><Trash2 className="w-4 h-4"/></button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="p-6 bg-slate-50 border-t flex justify-end"><button onClick={() => setShowSettings(false)} className="brand-bg text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-500/10 active:scale-95 transition-all">Guardar Ajustes</button></div>
+            {isAdmin && (
+              <div className="p-6 bg-slate-50 border-t flex justify-between items-center">
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Sincronización en la nube activa</p>
+                <button onClick={saveSharedSettings} className="brand-bg text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-red-500/20 active:scale-95 transition-all flex items-center gap-2">
+                  <Save className="w-4 h-4" /> Guardar Cambios Cloud
+                </button>
+              </div>
+            )}
+            {!isAdmin && (
+              <div className="p-6 bg-slate-50 border-t flex justify-end">
+                <button onClick={() => setShowSettings(false)} className="brand-bg text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-500/10 active:scale-95 transition-all">Cerrar</button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -472,8 +766,12 @@ const App: React.FC = () => {
       <header className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-50 shadow-sm backdrop-blur-md bg-white/90">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="brand-bg p-2 rounded-xl shadow-lg shadow-red-500/20">
-              <Smartphone className="text-white w-6 h-6" />
+            <div className="brand-bg p-2 rounded-xl shadow-lg shadow-red-500/20 overflow-hidden flex items-center justify-center w-10 h-10">
+              {brand.logo ? (
+                <img src={brand.logo} alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+              ) : (
+                <Smartphone className="text-white w-6 h-6" />
+              )}
             </div>
             <div>
               <h1 className="text-xl font-black tracking-tighter uppercase leading-none">{brand.companyName}</h1>
@@ -852,8 +1150,12 @@ const App: React.FC = () => {
         <div id="quote-document" className="bg-white p-12 w-[800px]">
           <div className="flex justify-between items-start mb-10 border-b-8 border-slate-900 pb-8">
             <div className="flex items-center gap-6">
-              <div className="bg-red-600 p-4 rounded-2xl shadow-xl">
-                <Smartphone className="text-white w-12 h-12" />
+              <div className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 flex items-center justify-center w-24 h-24 overflow-hidden">
+                {brand.logo ? (
+                  <img src={brand.logo} alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                ) : (
+                  <Smartphone className="brand-text w-12 h-12" />
+                )}
               </div>
               <div>
                 <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter leading-none">{brand.companyName}</h1>
