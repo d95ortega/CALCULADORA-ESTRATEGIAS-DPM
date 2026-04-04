@@ -6,7 +6,7 @@ import { PRODUCT_PRICES_FINAL, PRODUCT_PRICES_PUBLISHER, PRODUCT_DESIGN_TIMES, D
 import { 
   Calculator, Settings, Sparkles, Plus, FileText, X, Download, MessageCircle,
   Loader2, Image as ImageIcon, Layers, Info, Trash2, Edit2, Save, CheckCircle2,
-  PlusCircle, MessageSquare, UserCheck, Palette, Building2, UploadCloud, Smartphone,
+  PlusCircle, MessageSquare, UserCheck, Palette, Building2, UploadCloud, Smartphone, HelpCircle,
   DollarSign, Percent, Clock, Box, MapPin, Mail, Phone, Fingerprint, Users, Search, Ruler, Disc, Droplets, Zap, Wrench, Scissors, Layout, RefreshCcw, PieChart, Activity,
   Maximize2, Type as FontIcon, MoveHorizontal, ChevronRight, Tags, Power, TrendingUp, ShieldCheck, PenTool, Hash, LogIn, LogOut
 } from 'lucide-react';
@@ -621,7 +621,10 @@ const App: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-black text-slate-400 uppercase">Tarifa Hora Laboral ($)</label>
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase">Tarifa Hora Laboral ($)</label>
+                          <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Costo por hora de mano de obra del personal técnico." />
+                        </div>
                         <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Mano de Obra</span>
                       </div>
                       <input type="number" value={params.hourly_rate} onChange={e => setParams({...params, hourly_rate: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
@@ -629,7 +632,10 @@ const App: React.FC = () => {
                     
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-black text-slate-400 uppercase">Porcentaje IVA (0.19)</label>
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase">Porcentaje IVA (0.19)</label>
+                          <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Impuesto al Valor Agregado aplicado al precio final (ej: 0.19 para 19%)." />
+                        </div>
                         <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Impuestos</span>
                       </div>
                       <input type="number" step="0.01" value={params.iva} onChange={e => setParams({...params, iva: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
@@ -637,7 +643,10 @@ const App: React.FC = () => {
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-black text-slate-400 uppercase">Margen Utilidad Final (0.35)</label>
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase">Margen Utilidad Final (0.35)</label>
+                          <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Porcentaje de ganancia esperado para clientes particulares." />
+                        </div>
                         <span className="text-[8px] bg-green-50 px-1.5 py-0.5 rounded text-green-600 font-bold uppercase">Ganancia</span>
                       </div>
                       <input type="number" step="0.01" value={params.profit_margin_final} onChange={e => setParams({...params, profit_margin_final: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
@@ -645,7 +654,10 @@ const App: React.FC = () => {
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-black text-slate-400 uppercase">Margen Utilidad Publi (0.20)</label>
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase">Margen Utilidad Publi (0.20)</label>
+                          <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Porcentaje de ganancia reducido para agencias o revendedores." />
+                        </div>
                         <span className="text-[8px] bg-green-50 px-1.5 py-0.5 rounded text-green-600 font-bold uppercase">Ganancia</span>
                       </div>
                       <input type="number" step="0.01" value={params.profit_margin_publisher} onChange={e => setParams({...params, profit_margin_publisher: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
@@ -653,7 +665,10 @@ const App: React.FC = () => {
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-black text-slate-400 uppercase">Factor Vinilo (Acrílico)</label>
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase">Factor Vinilo (Acrílico)</label>
+                          <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Multiplicador aplicado al costo base del vinilo para cubrir instalación y adhesivos." />
+                        </div>
                         <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Multiplicador</span>
                       </div>
                       <input type="number" step="0.1" value={params.vinilo_factor || 2.4} onChange={e => setParams({...params, vinilo_factor: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
@@ -661,7 +676,10 @@ const App: React.FC = () => {
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-black text-slate-400 uppercase">Factor Lona (Acrílico)</label>
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase">Factor Lona (Acrílico)</label>
+                          <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Multiplicador aplicado al costo base de la lona para cubrir refuerzos y ojales." />
+                        </div>
                         <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Multiplicador</span>
                       </div>
                       <input type="number" step="0.1" value={params.lona_factor || 2.3} onChange={e => setParams({...params, lona_factor: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
@@ -669,7 +687,10 @@ const App: React.FC = () => {
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-black text-slate-400 uppercase">Costo LED por cm ($)</label>
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase">Costo LED por cm ($)</label>
+                          <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Precio de venta por cada centímetro de cinta LED instalada." />
+                        </div>
                         <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Material</span>
                       </div>
                       <input type="number" value={params.led_cost_per_cm || 130} onChange={e => setParams({...params, led_cost_per_cm: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
@@ -677,7 +698,10 @@ const App: React.FC = () => {
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-black text-slate-400 uppercase">Costo Fijo Diseño ($)</label>
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase">Costo Fijo Diseño ($)</label>
+                          <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Tarifa única por el trabajo de diseño gráfico y preparación de archivos." />
+                        </div>
                         <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Servicio</span>
                       </div>
                       <input type="number" value={params.design_fixed_cost} onChange={e => setParams({...params, design_fixed_cost: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
@@ -685,7 +709,10 @@ const App: React.FC = () => {
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-black text-slate-400 uppercase">Mínimo Operativo ($)</label>
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase">Mínimo Operativo ($)</label>
+                          <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Monto mínimo que se cobra por cualquier trabajo para cubrir gastos base." />
+                        </div>
                         <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Base</span>
                       </div>
                       <input type="number" value={params.min_operative} onChange={e => setParams({...params, min_operative: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
@@ -693,7 +720,10 @@ const App: React.FC = () => {
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-black text-slate-400 uppercase">Factor Desperdicio (0.20)</label>
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase">Factor Desperdicio (0.20)</label>
+                          <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Porcentaje de material adicional contemplado para cubrir errores o recortes." />
+                        </div>
                         <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Seguridad</span>
                       </div>
                       <input type="number" step="0.01" value={params.waste} onChange={e => setParams({...params, waste: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
