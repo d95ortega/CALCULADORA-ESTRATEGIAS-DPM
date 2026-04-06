@@ -1074,13 +1074,21 @@ const App: React.FC = () => {
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-black brand-text italic tracking-tighter">${Math.round(h.total).toLocaleString()}</p>
-                            <div className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
-                              h.status === 'PAGADA' ? 'bg-green-100 text-green-600' : 
-                              h.status === 'APROBADA' ? 'bg-blue-100 text-blue-600' :
-                              h.status === 'ENVIADA' ? 'bg-amber-100 text-amber-600' :
-                              'bg-slate-100 text-slate-600'
-                            }`}>
-                              {h.status}
+                            <div className="flex flex-col items-end gap-1 mt-1">
+                              <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
+                                h.status === 'PAGADA' ? 'bg-green-100 text-green-600' : 
+                                h.status === 'APROBADA' ? 'bg-blue-100 text-blue-600' :
+                                h.status === 'ENVIADA' ? 'bg-amber-100 text-amber-600' :
+                                'bg-slate-100 text-slate-600'
+                              }`}>
+                                {h.status || 'PENDIENTE'}
+                              </div>
+                              {h.orderId && (
+                                <div className="flex items-center gap-1 text-[7px] font-bold text-slate-400 uppercase tracking-widest">
+                                  <span>Producción:</span>
+                                  <span className="text-blue-500">{orders.find(o => o.id === h.orderId)?.status || '...'}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1090,7 +1098,7 @@ const App: React.FC = () => {
                               key={status}
                               onClick={() => updateQuoteStatus(h.id, status)}
                               className={`flex-1 py-1.5 rounded-lg text-[7px] font-black uppercase transition-all border ${
-                                h.status === status 
+                                (h.status || 'PENDIENTE') === status 
                                   ? 'brand-bg text-white border-transparent' 
                                   : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50'
                               }`}
@@ -1146,19 +1154,22 @@ const App: React.FC = () => {
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-black text-slate-900 italic tracking-tighter">${Math.round(order.total).toLocaleString()}</p>
-                            <div className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
-                              order.status === 'ENTREGADO' ? 'bg-green-100 text-green-600' : 
-                              order.status === 'DESCARGADOS' ? 'bg-slate-100 text-slate-600' :
-                              'bg-blue-100 text-blue-600'
-                            }`}>
-                              {order.status === 'NUEVA' && <PlusCircle className="w-2.5 h-2.5" />}
-                              {order.status === 'CORTE_LASER' && <Scissors className="w-2.5 h-2.5" />}
-                              {order.status === 'PLOTTER_CORTE' && <Printer className="w-2.5 h-2.5" />}
-                              {order.status === 'BODEGA_FABRICA' && <Warehouse className="w-2.5 h-2.5" />}
-                              {order.status === 'BODEGA_PUNTO_VENTA' && <Store className="w-2.5 h-2.5" />}
-                              {order.status === 'ENTREGADO' && <CheckCircle2 className="w-2.5 h-2.5" />}
-                              {order.status === 'DESCARGADOS' && <Download className="w-2.5 h-2.5" />}
-                              {order.status.replace('_', ' ')}
+                            <div className="flex flex-col items-end gap-1 mt-1">
+                              <span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">Estado Actual:</span>
+                              <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
+                                order.status === 'ENTREGADO' ? 'bg-green-100 text-green-600' : 
+                                order.status === 'DESCARGADOS' ? 'bg-slate-100 text-slate-600' :
+                                'bg-blue-100 text-blue-600'
+                              }`}>
+                                {order.status === 'NUEVA' && <PlusCircle className="w-2.5 h-2.5" />}
+                                {order.status === 'CORTE_LASER' && <Scissors className="w-2.5 h-2.5" />}
+                                {order.status === 'PLOTTER_CORTE' && <Printer className="w-2.5 h-2.5" />}
+                                {order.status === 'BODEGA_FABRICA' && <Warehouse className="w-2.5 h-2.5" />}
+                                {order.status === 'BODEGA_PUNTO_VENTA' && <Store className="w-2.5 h-2.5" />}
+                                {order.status === 'ENTREGADO' && <CheckCircle2 className="w-2.5 h-2.5" />}
+                                {order.status === 'DESCARGADOS' && <Download className="w-2.5 h-2.5" />}
+                                {order.status.replace('_', ' ')}
+                              </div>
                             </div>
                           </div>
                         </div>
