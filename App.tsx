@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef, Component, ErrorInfo, ReactNode } from 'react';
-import { FormData, SavedJob, Product, Customer, AcrylicType, BaseType, AcrylicMaterial, QuoteHistoryEntry, Order, OrderStatus } from './types';
+import { FormData, SavedJob, Product, Customer, AcrylicType, BaseType, AcrylicMaterial, QuoteHistoryEntry, Order, OrderStatus, QuoteStatus } from './types';
 import { calculateQuote } from './utils/calculator';
 import { PRODUCT_PRICES_FINAL, PRODUCT_PRICES_PUBLISHER, PRODUCT_DESIGN_TIMES, DEFAULT_PARAMS } from './constants';
 import { 
@@ -325,7 +325,8 @@ const App: React.FC = () => {
       customerPhone: customerInfo.phone || "",
       date: date,
       items: [...quoteJobs],
-      total: total
+      total: total,
+      status: 'PENDIENTE'
     };
 
     if (user && isAuthorized) {
@@ -479,6 +480,30 @@ const App: React.FC = () => {
       }
     } else {
       setOrders(prev => prev.filter(o => o.id !== id));
+    }
+  };
+
+  const updateQuoteStatus = async (quoteId: string, status: QuoteStatus) => {
+    if (user && isAuthorized) {
+      const path = `company_data/dpm/quotes`;
+      try {
+        await updateDoc(doc(db, path, quoteId), { status });
+        if (status === 'PAGADA') {
+          const quote = history.find(h => h.id === quoteId);
+          if (quote) await convertToOrder(quote);
+        }
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, path);
+      }
+    } else {
+      setHistory(prev => {
+        const updated = prev.map(h => h.id === quoteId ? { ...h, status } : h);
+        if (status === 'PAGADA') {
+          const quote = updated.find(h => h.id === quoteId);
+          if (quote) setTimeout(() => convertToOrder(quote), 0);
+        }
+        return updated;
+      });
     }
   };
 
@@ -1049,8 +1074,30 @@ const App: React.FC = () => {
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-black brand-text italic tracking-tighter">${Math.round(h.total).toLocaleString()}</p>
-                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{h.items.length} Items</p>
+                            <div className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
+                              h.status === 'PAGADA' ? 'bg-green-100 text-green-600' : 
+                              h.status === 'APROBADA' ? 'bg-blue-100 text-blue-600' :
+                              h.status === 'ENVIADA' ? 'bg-amber-100 text-amber-600' :
+                              'bg-slate-100 text-slate-600'
+                            }`}>
+                              {h.status}
+                            </div>
                           </div>
+                        </div>
+                        <div className="flex gap-1">
+                          {(['PENDIENTE', 'ENVIADA', 'APROBADA', 'PAGADA'] as QuoteStatus[]).map(status => (
+                            <button
+                              key={status}
+                              onClick={() => updateQuoteStatus(h.id, status)}
+                              className={`flex-1 py-1.5 rounded-lg text-[7px] font-black uppercase transition-all border ${
+                                h.status === status 
+                                  ? 'brand-bg text-white border-transparent' 
+                                  : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50'
+                              }`}
+                            >
+                              {status}
+                            </button>
+                          ))}
                         </div>
                         <div className="flex gap-2">
                           <button onClick={() => {
@@ -1257,6 +1304,9 @@ const App: React.FC = () => {
                 <LogIn className="w-4 h-4" /> Entrar
               </button>
             )}
+            <button onClick={() => { setActiveSettingsTab('orders'); setShowSettings(true); }} className="flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95 shadow-sm">
+              <Package className="w-4 h-4" /> Pedidos
+            </button>
             <button onClick={() => setShowSettings(true)} className="p-3 bg-slate-900 text-white rounded-xl shadow-xl hover:brand-bg transition-all active:scale-90"><Settings className="w-5 h-5"/></button>
           </div>
         </div>

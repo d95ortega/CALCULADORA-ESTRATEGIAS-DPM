@@ -36,9 +36,10 @@
         "date": { "type": "string", "description": "The date the quote was generated" },
         "total": { "type": "number", "description": "The total investment amount of the quote" },
         "items": { "type": "array", "description": "The list of items included in the quote" },
-        "orderId": { "type": "string", "description": "The ID of the order if this quote was converted" }
+        "orderId": { "type": "string", "description": "The ID of the order if this quote was converted" },
+        "status": { "type": "string", "enum": ["PENDIENTE", "ENVIADA", "APROBADA", "PAGADA"], "description": "The current status of the quote" }
       },
-      "required": ["customerName", "date", "total", "items"]
+      "required": ["customerName", "date", "total", "items", "status"]
     },
     "Order": {
       "title": "Order",

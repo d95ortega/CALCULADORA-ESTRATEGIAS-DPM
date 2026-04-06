@@ -92,13 +92,14 @@ service cloud.firestore {
     }
 
     function isValidQuote(data) {
-      return hasOnlyAllowedFields(['customerName', 'customerPhone', 'date', 'total', 'items', 'orderId']) &&
+      return hasOnlyAllowedFields(['customerName', 'customerPhone', 'date', 'total', 'items', 'orderId', 'status']) &&
              data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
              data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 20 &&
              isValidDateString(data.date) &&
              data.total is number && data.total >= 0 &&
              data.items is list && data.items.size() <= 50 &&
-             (!('orderId' in data) || (data.orderId is string));
+             (!('orderId' in data) || (data.orderId is string)) &&
+             data.status in ['PENDIENTE', 'ENVIADA', 'APROBADA', 'PAGADA'];
     }
 
     function isValidOrder(data) {
