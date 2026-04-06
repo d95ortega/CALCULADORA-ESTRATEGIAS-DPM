@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef, Component, ErrorInfo, ReactNode } from 'react';
-import { FormData, SavedJob, Product, Customer, AcrylicType, BaseType, AcrylicMaterial, QuoteHistoryEntry } from './types';
+import { FormData, SavedJob, Product, Customer, AcrylicType, BaseType, AcrylicMaterial, QuoteHistoryEntry, Order, OrderStatus } from './types';
 import { calculateQuote } from './utils/calculator';
 import { PRODUCT_PRICES_FINAL, PRODUCT_PRICES_PUBLISHER, PRODUCT_DESIGN_TIMES, DEFAULT_PARAMS } from './constants';
 import { 
@@ -8,7 +8,7 @@ import {
   Loader2, Image as ImageIcon, Layers, Info, Trash2, Edit2, Save, CheckCircle2,
   PlusCircle, MessageSquare, UserCheck, Palette, Building2, UploadCloud, Smartphone, HelpCircle,
   DollarSign, Percent, Clock, Box, MapPin, Mail, Phone, Fingerprint, Users, Search, Ruler, Disc, Droplets, Zap, Wrench, Scissors, Layout, RefreshCcw, PieChart, Activity,
-  Maximize2, Type as FontIcon, MoveHorizontal, ChevronRight, Tags, Power, TrendingUp, ShieldCheck, PenTool, Hash, LogIn, LogOut
+  Maximize2, Type as FontIcon, MoveHorizontal, ChevronRight, Tags, Power, TrendingUp, ShieldCheck, PenTool, Hash, LogIn, LogOut, Package, Printer, Warehouse, Store, Truck, ClipboardList
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -107,8 +107,12 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('dpm_history');
     return saved ? JSON.parse(saved) : [];
   });
+  const [orders, setOrders] = useState<Order[]>(() => {
+    const saved = localStorage.getItem('dpm_orders');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [showSettings, setShowSettings] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState<'products' | 'brand' | 'costs' | 'params' | 'customers' | 'history' | 'users'>('products');
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'products' | 'brand' | 'costs' | 'params' | 'customers' | 'history' | 'users' | 'orders'>('products');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -249,6 +253,20 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, [user, isAuthorized]);
 
+  // Sync Shared Orders
+  useEffect(() => {
+    if (!user || !isAuthorized) return;
+    const path = 'company_data/dpm/orders';
+    const q = query(collection(db, path));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+      setOrders(data.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, path);
+    });
+    return () => unsubscribe();
+  }, [user, isAuthorized]);
+
   const saveSharedSettings = async () => {
     if (!isAdmin) return;
     const path = 'company_data/dpm/settings/current';
@@ -265,8 +283,9 @@ const App: React.FC = () => {
     localStorage.setItem('dpm_brand', JSON.stringify(brand));
     localStorage.setItem('dpm_customers', JSON.stringify(customers));
     localStorage.setItem('dpm_history', JSON.stringify(history));
+    localStorage.setItem('dpm_orders', JSON.stringify(orders));
     document.documentElement.style.setProperty('--primary-color', brand.primaryColor);
-  }, [params, products, brand, customers, history]);
+  }, [params, products, brand, customers, history, orders]);
 
   const quote = useMemo(() => calculateQuote(formData, params, products), [formData, params, products]);
   
@@ -401,6 +420,65 @@ const App: React.FC = () => {
       }
     } else {
       setHistory(prev => prev.filter(h => h.id !== id));
+    }
+  };
+
+  const convertToOrder = async (quote: QuoteHistoryEntry) => {
+    if (quote.orderId) return;
+    
+    const orderId = `DPM-ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newOrder: Omit<Order, 'id'> = {
+      quoteId: quote.id,
+      customerName: quote.customerName,
+      customerPhone: quote.customerPhone,
+      items: quote.items,
+      total: quote.total,
+      status: 'NUEVA',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    if (user && isAuthorized) {
+      const orderPath = 'company_data/dpm/orders';
+      const quotePath = `company_data/dpm/quotes`;
+      try {
+        await setDoc(doc(db, orderPath, orderId), newOrder);
+        await updateDoc(doc(db, quotePath, quote.id), { orderId });
+        setActiveSettingsTab('orders');
+      } catch (error) {
+        handleFirestoreError(error, OperationType.CREATE, orderPath);
+      }
+    } else {
+      const finalOrder = { ...newOrder, id: orderId };
+      setOrders(prev => [finalOrder, ...prev]);
+      setHistory(prev => prev.map(h => h.id === quote.id ? { ...h, orderId } : h));
+      setActiveSettingsTab('orders');
+    }
+  };
+
+  const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
+    if (user && isAuthorized) {
+      const path = `company_data/dpm/orders`;
+      try {
+        await updateDoc(doc(db, path, orderId), { status, updatedAt: new Date().toISOString() });
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, path);
+      }
+    } else {
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status, updatedAt: new Date().toISOString() } : o));
+    }
+  };
+
+  const deleteOrder = async (id: string) => {
+    if (user && isAuthorized) {
+      const path = `company_data/dpm/orders`;
+      try {
+        await deleteDoc(doc(db, path, id));
+      } catch (error) {
+        handleFirestoreError(error, OperationType.DELETE, path);
+      }
+    } else {
+      setOrders(prev => prev.filter(o => o.id !== id));
     }
   };
 
@@ -610,6 +688,7 @@ const App: React.FC = () => {
               <button onClick={() => setActiveSettingsTab('brand')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'brand' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Marca y Logo</button>
               <button onClick={() => setActiveSettingsTab('customers')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'customers' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Clientes</button>
               <button onClick={() => setActiveSettingsTab('history')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'history' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Historial</button>
+              <button onClick={() => setActiveSettingsTab('orders')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'orders' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Pedidos</button>
               {isAdmin && (
                 <button onClick={() => setActiveSettingsTab('users')} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${activeSettingsTab === 'users' ? 'bg-white shadow-sm brand-text' : 'text-slate-400'}`}>Accesos</button>
               )}
@@ -979,6 +1058,15 @@ const App: React.FC = () => {
                             setCustomerInfo({ id: '', name: h.customerName, phone: h.customerPhone, address: '', email: '' });
                             setShowSettings(false);
                           }} className="flex-1 bg-white py-2 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-600 hover:bg-red-50 hover:text-red-500 transition-all shadow-sm border border-slate-100">Cargar Cotización</button>
+                          {!h.orderId ? (
+                            <button onClick={() => convertToOrder(h)} className="flex-1 brand-bg text-white py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-sm flex items-center justify-center gap-2">
+                              <Package className="w-3 h-3" /> Pasar a Producción
+                            </button>
+                          ) : (
+                            <button onClick={() => setActiveSettingsTab('orders')} className="flex-1 bg-green-50 text-green-600 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border border-green-100 flex items-center justify-center gap-2">
+                              <CheckCircle2 className="w-3 h-3" /> En Producción ({h.orderId})
+                            </button>
+                          )}
                           <button onClick={() => handleDeleteQuote(h.id)} className="bg-white p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm border border-slate-100"><Trash2 className="w-3 h-3"/></button>
                         </div>
                       </div>
@@ -987,6 +1075,83 @@ const App: React.FC = () => {
                       <div className="text-center py-10 opacity-30">
                         <FileText className="w-10 h-10 mx-auto mb-2" />
                         <p className="text-xs font-bold uppercase tracking-widest">No hay historial disponible</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {activeSettingsTab === 'orders' && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-sm font-black uppercase italic tracking-tighter">Seguimiento de Pedidos</h4>
+                    <span className="bg-slate-100 px-3 py-1 rounded-full text-[10px] font-bold text-slate-500 uppercase">{orders.length} Activos</span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    {orders.map(order => (
+                      <div key={order.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4 group hover:border-red-200 transition-all">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black brand-text bg-red-50 px-2 py-0.5 rounded-lg">{order.id}</span>
+                              <p className="text-xs font-black uppercase tracking-tight">{order.customerName}</p>
+                            </div>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Actualizado: {new Date(order.updatedAt).toLocaleString()}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-black text-slate-900 italic tracking-tighter">${Math.round(order.total).toLocaleString()}</p>
+                            <div className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
+                              order.status === 'ENTREGADO' ? 'bg-green-100 text-green-600' : 
+                              order.status === 'DESCARGADOS' ? 'bg-slate-100 text-slate-600' :
+                              'bg-blue-100 text-blue-600'
+                            }`}>
+                              {order.status === 'NUEVA' && <PlusCircle className="w-2.5 h-2.5" />}
+                              {order.status === 'CORTE_LASER' && <Scissors className="w-2.5 h-2.5" />}
+                              {order.status === 'PLOTTER_CORTE' && <Printer className="w-2.5 h-2.5" />}
+                              {order.status === 'BODEGA_FABRICA' && <Warehouse className="w-2.5 h-2.5" />}
+                              {order.status === 'BODEGA_PUNTO_VENTA' && <Store className="w-2.5 h-2.5" />}
+                              {order.status === 'ENTREGADO' && <CheckCircle2 className="w-2.5 h-2.5" />}
+                              {order.status === 'DESCARGADOS' && <Download className="w-2.5 h-2.5" />}
+                              {order.status.replace('_', ' ')}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-1">
+                          {(['NUEVA', 'CORTE_LASER', 'PLOTTER_CORTE', 'BODEGA_FABRICA', 'BODEGA_PUNTO_VENTA', 'ENTREGADO', 'DESCARGADOS'] as OrderStatus[]).map(status => (
+                            <button
+                              key={status}
+                              onClick={() => updateOrderStatus(order.id, status)}
+                              className={`py-2 rounded-xl text-[7px] font-black uppercase transition-all flex flex-col items-center gap-1 border ${
+                                order.status === status 
+                                  ? 'brand-bg text-white border-transparent shadow-md' 
+                                  : 'bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100'
+                              }`}
+                            >
+                              {status === 'NUEVA' && <PlusCircle className="w-3 h-3" />}
+                              {status === 'CORTE_LASER' && <Scissors className="w-3 h-3" />}
+                              {status === 'PLOTTER_CORTE' && <Printer className="w-3 h-3" />}
+                              {status === 'BODEGA_FABRICA' && <Warehouse className="w-3 h-3" />}
+                              {status === 'BODEGA_PUNTO_VENTA' && <Store className="w-3 h-3" />}
+                              {status === 'ENTREGADO' && <CheckCircle2 className="w-3 h-3" />}
+                              {status === 'DESCARGADOS' && <Download className="w-3 h-3" />}
+                              <span className="truncate w-full px-1">{status.split('_')[0]}</span>
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="flex gap-2 pt-2 border-t border-slate-50">
+                           <button onClick={() => deleteOrder(order.id)} className="p-2 text-slate-300 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4"/></button>
+                           <div className="flex-1 text-[9px] text-slate-400 font-bold uppercase italic flex items-center justify-end gap-2">
+                             <ClipboardList className="w-3 h-3" /> {order.items.length} productos en producción
+                           </div>
+                        </div>
+                      </div>
+                    ))}
+                    {orders.length === 0 && (
+                      <div className="text-center py-20 opacity-30">
+                        <Package className="w-16 h-16 mx-auto mb-4" />
+                        <p className="text-sm font-black uppercase tracking-[0.2em]">No hay pedidos en producción</p>
+                        <p className="text-[10px] font-bold mt-2">Convierte una cotización aprobada para iniciar</p>
                       </div>
                     )}
                   </div>

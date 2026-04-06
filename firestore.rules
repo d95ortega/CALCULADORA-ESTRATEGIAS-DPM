@@ -92,12 +92,26 @@ service cloud.firestore {
     }
 
     function isValidQuote(data) {
-      return hasOnlyAllowedFields(['customerName', 'customerPhone', 'date', 'total', 'items']) &&
+      return hasOnlyAllowedFields(['customerName', 'customerPhone', 'date', 'total', 'items', 'orderId']) &&
              data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
              data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 20 &&
              isValidDateString(data.date) &&
              data.total is number && data.total >= 0 &&
-             data.items is list && data.items.size() <= 50;
+             data.items is list && data.items.size() <= 50 &&
+             (!('orderId' in data) || (data.orderId is string));
+    }
+
+    function isValidOrder(data) {
+      return hasOnlyAllowedFields(['quoteId', 'customerName', 'customerPhone', 'total', 'status', 'createdAt', 'updatedAt', 'items', 'notes']) &&
+             data.quoteId is string &&
+             data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
+             data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 20 &&
+             data.total is number && data.total >= 0 &&
+             data.status in ['NUEVA', 'CORTE_LASER', 'PLOTTER_CORTE', 'BODEGA_FABRICA', 'BODEGA_PUNTO_VENTA', 'ENTREGADO', 'DESCARGADOS'] &&
+             isValidDateString(data.createdAt) &&
+             isValidDateString(data.updatedAt) &&
+             data.items is list && data.items.size() <= 50 &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000));
     }
 
     // ===============================================================
@@ -119,6 +133,12 @@ service cloud.firestore {
       match /quotes/{quoteId} {
         allow read: if isAuthorized();
         allow create, update: if isAuthorized() && isValidQuote(request.resource.data);
+        allow delete: if isAdmin();
+      }
+
+      match /orders/{orderId} {
+        allow read: if isAuthorized();
+        allow create, update: if isAuthorized() && isValidOrder(request.resource.data);
         allow delete: if isAdmin();
       }
 

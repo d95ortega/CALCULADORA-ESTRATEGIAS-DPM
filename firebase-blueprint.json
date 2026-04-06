@@ -35,9 +35,26 @@
         "customerPhone": { "type": "string", "description": "The phone number of the customer" },
         "date": { "type": "string", "description": "The date the quote was generated" },
         "total": { "type": "number", "description": "The total investment amount of the quote" },
-        "items": { "type": "array", "description": "The list of items included in the quote" }
+        "items": { "type": "array", "description": "The list of items included in the quote" },
+        "orderId": { "type": "string", "description": "The ID of the order if this quote was converted" }
       },
       "required": ["customerName", "date", "total", "items"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A production order generated from a quote",
+      "type": "object",
+      "properties": {
+        "quoteId": { "type": "string", "description": "The ID of the source quote" },
+        "customerName": { "type": "string", "description": "The name of the customer" },
+        "customerPhone": { "type": "string", "description": "The phone number of the customer" },
+        "total": { "type": "number", "description": "The total amount of the order" },
+        "status": { "type": "string", "enum": ["NUEVA", "CORTE_LASER", "PLOTTER_CORTE", "BODEGA_FABRICA", "BODEGA_PUNTO_VENTA", "ENTREGADO", "DESCARGADOS"], "description": "The current production status" },
+        "createdAt": { "type": "string", "description": "When the order was created" },
+        "updatedAt": { "type": "string", "description": "When the order status was last updated" },
+        "items": { "type": "array", "description": "The list of items in the order" }
+      },
+      "required": ["quoteId", "customerName", "total", "status", "createdAt", "updatedAt", "items"]
     }
   },
   "firestore": {
@@ -52,6 +69,10 @@
     "/company_data/dpm/quotes/{quoteId}": {
       "schema": "Quote",
       "description": "The shared collection of quote history for the company"
+    },
+    "/company_data/dpm/orders/{orderId}": {
+      "schema": "Order",
+      "description": "The shared collection of production orders for the company"
     },
     "/company_data/dpm/settings/current": {
       "schema": "object",

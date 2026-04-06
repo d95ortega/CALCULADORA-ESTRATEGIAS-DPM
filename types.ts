@@ -130,7 +130,23 @@ export interface FormalQuote {
   items: SavedJob[];
 }
 
+export type OrderStatus = 'NUEVA' | 'CORTE_LASER' | 'PLOTTER_CORTE' | 'BODEGA_FABRICA' | 'BODEGA_PUNTO_VENTA' | 'ENTREGADO' | 'DESCARGADOS';
+
+export interface Order {
+  id: string;
+  quoteId: string;
+  customerName: string;
+  customerPhone: string;
+  items: SavedJob[];
+  total: number;
+  status: OrderStatus;
+  createdAt: string;
+  updatedAt: string;
+  notes?: string;
+}
+
 export interface QuoteHistoryEntry extends FormalQuote {
   id: string;
   total: number;
+  orderId?: string;
 }
