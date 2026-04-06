@@ -3,7 +3,7 @@ export const DEFAULT_PARAMS = {
   hourly_rate: 8500,
   cost_per_cm2: 0.75,
   acrilico_cost_per_m2: 11250, 
-  impresion_cost_per_cm2: 28,
+  impresion_cost_per_cm2: 0,
   design_fixed_cost: 15000,
   iva: 0.19,
   waste: 0.2,

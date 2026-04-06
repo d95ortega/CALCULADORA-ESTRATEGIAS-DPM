@@ -19,7 +19,8 @@ export const calculateQuote = (data: FormData, params: any, products: Product[])
   const designTimeMinutes = productData?.designTime || 0;
   
   const isAcrilico = (job_description || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().includes('ACRILICO');
-  const isAnyPendon = job_description.includes('PENDON') || job_description === 'PENDONES' || job_description.includes('BANNER');
+  const normalizedDesc = (job_description || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+  const isAnyPendon = normalizedDesc.includes('PENDON') || normalizedDesc.includes('BANNER') || normalizedDesc.includes('PANAFLEX');
   
   const areaCm2Unitary = width * height; 
   const areaM2FromDims = areaCm2Unitary / 10000;
@@ -47,7 +48,7 @@ export const calculateQuote = (data: FormData, params: any, products: Product[])
   if (isAcrilico) {
     const materials: AcrylicMaterial[] = params.acrylic_materials || [];
     const selectedMaterial = materials.find(m => m.id === selected_acrylic_material_id);
-    const materialPriceCm2 = selectedMaterial ? selectedMaterial.cost_per_cm2 : (params.acrilico_cost_per_m2 / 10000 || 1.125);
+    const materialPriceCm2 = selectedMaterial ? selectedMaterial.cost_per_cm2 : (params.acrilico_cost_per_m2 / 10000 || 11.25);
     
     // Cálculo de componentes detallados
     costCalado = ((calado_w || 0) * (calado_h || 0)) * materialPriceCm2;
@@ -87,9 +88,11 @@ export const calculateQuote = (data: FormData, params: any, products: Product[])
     productionCost = laserCost + assemblyCost;
   } else {
     const realAreaCm2Total = effectiveAreaCm2Unitary * quantity;
-    const baseCostPerCm2 = customer_type === 'final' ? (productData?.priceFinal || 0.75) : (productData?.pricePublisher || 0.75);
+    const baseCostPerCm2 = customer_type === 'final' ? (productData?.priceFinal || params.cost_per_cm2 || 0.75) : (productData?.pricePublisher || params.cost_per_cm2 || 0.75);
     
-    materialCost = realAreaCm2Total * baseCostPerCm2;
+    // Add configurable impression cost if provided
+    const totalCostPerCm2 = baseCostPerCm2 + (params.impresion_cost_per_cm2 || 0);
+    materialCost = realAreaCm2Total * totalCostPerCm2;
     designCost = include_design && customer_type === 'final' ? (DESIGN_COST_BY_MINUTES[designTimeMinutes] || 0) : 0;
     productionCost = (production_time / 60) * params.hourly_rate;
     installCostCalculated = installation || 0;
@@ -101,7 +104,7 @@ export const calculateQuote = (data: FormData, params: any, products: Product[])
 
   const subtotalBeforeWaste = materialCost + productionCost + designCost + taponCost + tubeCost + ojalesCost + structureCostTotal;
   
-  const wasteCost = !isAcrilico ? materialCost * (params.waste || 0.1) : 0;
+  const wasteCost = materialCost * (params.waste || 0.1);
   const totalBeforeMargin = subtotalBeforeWaste + wasteCost + installCostCalculated + (transport || 0);
   
   const margin = customer_type === 'final' ? params.profit_margin_final : params.profit_margin_publisher;

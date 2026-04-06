@@ -42,6 +42,24 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('dpm_brand');
     return saved ? JSON.parse(saved) : DEFAULT_BRAND;
   });
+
+  // Versioning system to force reset if needed
+  const STORAGE_VERSION = '4.1.0-force-factory-reset';
+  
+  useEffect(() => {
+    const currentVersion = localStorage.getItem('dpm_storage_version');
+    if (currentVersion !== STORAGE_VERSION) {
+      // Clear local
+      localStorage.removeItem('dpm_params');
+      localStorage.removeItem('dpm_products');
+      localStorage.setItem('dpm_storage_version', STORAGE_VERSION);
+      
+      // If admin is logged in, we will also overwrite Firestore in the next render cycle
+      // by triggering a reload which will then hit the "saveSharedSettings" if we force it
+      window.location.reload();
+    }
+  }, []);
+
   const [params, setParams] = useState(() => {
     const saved = localStorage.getItem('dpm_params');
     return saved ? JSON.parse(saved) : DEFAULT_PARAMS;
@@ -100,6 +118,37 @@ const App: React.FC = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const OWNER_EMAIL = 'estrategiaslaunion@gmail.com';
+
+  // Effect to force-push factory defaults to Firestore if version is new and user is admin
+  useEffect(() => {
+    if (isAuthReady && user && isAuthorized && isAdmin) {
+      const versionPushed = localStorage.getItem('dpm_version_pushed_to_cloud');
+      if (versionPushed !== STORAGE_VERSION) {
+        const resetSettings = async () => {
+          const path = 'company_data/dpm/settings/current';
+          try {
+            // Force use the constants instead of current state which might be stale from Firestore sync
+            await setDoc(doc(db, path), { 
+              brand: DEFAULT_BRAND, 
+              params: DEFAULT_PARAMS, 
+              products: Object.keys(PRODUCT_PRICES_FINAL).map(name => ({
+                name,
+                priceFinal: PRODUCT_PRICES_FINAL[name],
+                pricePublisher: PRODUCT_PRICES_PUBLISHER[name] || PRODUCT_PRICES_FINAL[name],
+                designTime: PRODUCT_DESIGN_TIMES[name] || 0
+              }))
+            });
+            localStorage.setItem('dpm_version_pushed_to_cloud', STORAGE_VERSION);
+            console.log("Factory defaults pushed to cloud successfully");
+            window.location.reload(); // Reload to ensure all states are fresh
+          } catch (error) {
+            console.error("Error pushing factory defaults:", error);
+          }
+        };
+        resetSettings();
+      }
+    }
+  }, [isAuthReady, user, isAuthorized, isAdmin]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -509,14 +558,31 @@ const App: React.FC = () => {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .whatsapp-btn { background-color: #25D366; }
         .acrylic-card { 
-          background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%); 
-          border: 1px solid #334155; 
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); 
+          border: 1px solid rgba(255, 255, 255, 0.1); 
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+          position: relative;
+          overflow: hidden;
+        }
+        .acrylic-card::after {
+          content: "";
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+          pointer-events: none;
         }
         .acrylic-section { 
           background: rgba(255, 255, 255, 0.03); 
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(16px);
+          box-shadow: inset 0 0 40px rgba(255, 255, 255, 0.01), 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .acrylic-section:hover {
+          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(255, 255, 255, 0.15);
+          transform: translateY(-1px);
+          box-shadow: inset 0 0 40px rgba(255, 255, 255, 0.02), 0 12px 32px -4px rgba(0, 0, 0, 0.3);
         }
       `}</style>
 
@@ -728,6 +794,17 @@ const App: React.FC = () => {
                       </div>
                       <input type="number" step="0.01" value={params.waste} onChange={e => setParams({...params, waste: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
                     </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase">Costo Impresión por cm² ($)</label>
+                          <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Costo base de impresión por centímetro cuadrado para productos no acrílicos." />
+                        </div>
+                        <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Material</span>
+                      </div>
+                      <input type="number" step="0.01" value={params.impresion_cost_per_cm2 || 0} onChange={e => setParams({...params, impresion_cost_per_cm2: parseFloat(e.target.value)||0})} className="w-full p-4 bg-slate-50 rounded-2xl text-xs font-bold border-none ring-1 ring-slate-200" />
+                    </div>
                   </div>
 
                   <div className="space-y-4">
@@ -777,24 +854,38 @@ const App: React.FC = () => {
 
                   <div className="bg-slate-900 p-6 rounded-3xl space-y-4">
                     <h4 className="text-[11px] font-black uppercase brand-text flex items-center gap-2">
-                      <PieChart className="w-4 h-4" /> ¿Cómo se calcula el precio?
+                      <PieChart className="w-4 h-4" /> Desglose de Costos (1 Unidad)
                     </h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Costo Base</span>
-                        <span className="text-[10px] font-black text-white uppercase">Materiales + Mano de Obra + Diseño</span>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-slate-400 uppercase font-bold">Material Base:</span>
+                        <span className="text-white font-black">${Math.round(quote.materialCost / formData.quantity).toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Subtotal</span>
-                        <span className="text-[10px] font-black text-white uppercase">Costo Base + Desperdicio + Transporte</span>
+                      {quote.structureCost > 0 && (
+                        <div className="flex justify-between text-[10px]">
+                          <span className="text-slate-400 uppercase font-bold">Estructura:</span>
+                          <span className="text-white font-black">${Math.round(quote.structureCost / formData.quantity).toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-slate-400 uppercase font-bold">Mano de Obra:</span>
+                        <span className="text-white font-black">${Math.round(quote.productionCost / formData.quantity).toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Precio con Margen</span>
-                        <span className="text-[10px] font-black text-white uppercase">Subtotal × (1 + Margen Utilidad)</span>
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-slate-400 uppercase font-bold">Desperdicio ({Math.round((params.waste || 0.1) * 100)}%):</span>
+                        <span className="text-white font-black">${Math.round(quote.wasteCost / formData.quantity).toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Precio Final</span>
-                        <span className="text-[10px] font-black text-white uppercase">Precio con Margen + IVA (Solo Final)</span>
+                      <div className="flex justify-between text-[10px] border-t border-slate-800 pt-1">
+                        <span className="text-slate-400 uppercase font-bold">Subtotal Costo:</span>
+                        <span className="text-white font-black">${Math.round(quote.totalBeforeMargin / formData.quantity).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-slate-400 uppercase font-bold">Utilidad ({Math.round((formData.customer_type === 'final' ? params.profit_margin_final : params.profit_margin_publisher) * 100)}%):</span>
+                        <span className="text-red-400 font-black">${Math.round((quote.costWithMargin - quote.totalBeforeMargin) / formData.quantity).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-slate-400 uppercase font-bold">IVA ({Math.round(params.iva * 100)}%):</span>
+                        <span className="text-slate-300 font-black">${Math.round(quote.ivaAmount / formData.quantity).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -936,6 +1027,21 @@ const App: React.FC = () => {
                         </div>
                       </div>
                     ))}
+                  </div>
+                  
+                  <div className="pt-6 border-t border-slate-100">
+                    <button 
+                      onClick={() => {
+                        if (window.confirm("¿Estás seguro de restablecer todos los precios y parámetros a los valores de fábrica? Se borrarán los cambios locales.")) {
+                          localStorage.removeItem('dpm_params');
+                          localStorage.removeItem('dpm_products');
+                          window.location.reload();
+                        }
+                      }}
+                      className="w-full bg-red-50 text-red-600 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all flex items-center justify-center gap-2"
+                    >
+                      <RefreshCcw className="w-4 h-4" /> Restablecer Valores de Fábrica
+                    </button>
                   </div>
                 </div>
               )}
