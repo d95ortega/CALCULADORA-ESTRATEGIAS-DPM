@@ -13,6 +13,7 @@ export interface Customer {
   id: string;
   name: string;
   phone: string;
+  taxId?: string;
   email?: string;
   address?: string;
   notes?: string;
@@ -152,4 +153,5 @@ export interface QuoteHistoryEntry extends FormalQuote {
   total: number;
   orderId?: string;
   status: QuoteStatus;
+  isDraft?: boolean;
 }

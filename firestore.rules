@@ -81,9 +81,9 @@ service cloud.firestore {
     }
 
     function isValidCustomer(data) {
-      return hasOnlyAllowedFields(['name', 'phone', 'email', 'address', 'notes', 'createdAt', 'quotesCount']) &&
+      return hasOnlyAllowedFields(['name', 'phone', 'email', 'address', 'notes', 'createdAt', 'quotesCount', 'taxId']) &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-             data.phone is string && data.phone.size() > 0 && data.phone.size() <= 20 &&
+             data.phone is string && data.phone.size() <= 20 &&
              (!('email' in data) || isValidEmail(data.email)) &&
              (!('address' in data) || (data.address is string && data.address.size() <= 200)) &&
              (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
@@ -92,9 +92,9 @@ service cloud.firestore {
     }
 
     function isValidQuote(data) {
-      return hasOnlyAllowedFields(['customerName', 'customerPhone', 'date', 'total', 'items', 'orderId', 'status']) &&
+      return hasOnlyAllowedFields(['customerName', 'customerPhone', 'date', 'total', 'items', 'orderId', 'status', 'isDraft']) &&
              data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
-             data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 20 &&
+             data.customerPhone is string && data.customerPhone.size() <= 20 &&
              isValidDateString(data.date) &&
              data.total is number && data.total >= 0 &&
              data.items is list && data.items.size() <= 50 &&
