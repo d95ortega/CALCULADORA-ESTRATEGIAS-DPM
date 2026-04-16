@@ -1,6 +1,6 @@
 import React from 'react';
 import { Smartphone, Phone } from 'lucide-react';
-import { BrandSettings, Customer, SavedJob } from '../../types';
+import { BrandSettings, Customer, SavedJob } from '@/types';
 
 interface PDFTemplateProps {
   brand: BrandSettings;

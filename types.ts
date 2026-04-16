@@ -148,6 +148,23 @@ export interface Order {
   notes?: string;
 }
 
+export interface BrandSettings {
+  primaryColor: string;
+  companyName: string;
+  slogan: string;
+  address: string;
+  email: string;
+  phone: string;
+  taxId: string;
+  logo: string | null;
+}
+
+export interface User {
+  email: string;
+  role: 'admin' | 'user';
+  addedAt?: string;
+}
+
 export interface QuoteHistoryEntry extends FormalQuote {
   id: string;
   total: number;
@@ -155,3 +172,5 @@ export interface QuoteHistoryEntry extends FormalQuote {
   status: QuoteStatus;
   isDraft?: boolean;
 }
+
+export type HistoryEntry = QuoteHistoryEntry;

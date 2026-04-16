@@ -1,11 +1,11 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Calculator, Package, PenTool, MoveHorizontal, Hash, Wrench, FontIcon, Zap, Save, RefreshCcw,
+  Calculator, Package, PenTool, MoveHorizontal, Hash, Wrench, Type, Zap, Save, RefreshCcw,
   Trash2, Plus, FileText, Search, UserCheck, DollarSign, Download, PlusCircle, Box, TrendingUp, ShieldCheck,
   ChevronRight, Phone, MessageCircle, X, Power, Building2, Smartphone
 } from 'lucide-react';
-import { Product, FormData, SavedJob, Customer, QuoteStatus } from '../../types';
+import { Product, FormData, SavedJob, Customer, QuoteStatus } from '@/types';
 const WhatsAppIcon = MessageCircle; // Simple alias if not available
 
 interface CalculatorViewProps {
@@ -222,7 +222,7 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
               <div className="bg-slate-800/40 p-6 rounded-3xl border border-slate-800 space-y-5">
                 <div className="flex items-center gap-3 mb-2">
-                  <FontIcon className="w-5 h-5 brand-text" />
+                  <Type className="w-5 h-5 brand-text" />
                   <h4 className="text-[12px] font-black text-white uppercase tracking-[0.2em]">Corte & Volumen</h4>
                 </div>
                 <div className="space-y-5">

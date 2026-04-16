@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Users, UserCheck, Trash2, Phone, Fingerprint, FileText, User as UserIcon
 } from 'lucide-react';
-import { Customer } from '../../types';
+import { Customer } from '@/types';
 
 interface CustomersViewProps {
   customers: Customer[];

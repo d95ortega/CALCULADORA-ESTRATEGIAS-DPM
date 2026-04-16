@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Activity, Clock, Package, ChevronRight 
 } from 'lucide-react';
-import { HistoryEntry, Order } from '../../types';
+import { HistoryEntry, Order } from '@/types';
 
 interface DashboardViewProps {
   orders: Order[];

@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Search, RefreshCcw, Settings, MessageCircle, Trash2, FileText 
 } from 'lucide-react';
-import { QuoteHistoryEntry, QuoteStatus } from '../../types';
+import { QuoteHistoryEntry, QuoteStatus } from '@/types';
 
 interface QuotesViewProps {
   history: QuoteHistoryEntry[];

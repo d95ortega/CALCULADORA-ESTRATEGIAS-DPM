@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Package, Search, Clock, Trash2, ChevronRight, User, Phone 
 } from 'lucide-react';
-import { Order, OrderStatus } from '../../types';
+import { Order, OrderStatus } from '@/types';
 
 interface OrdersViewProps {
   orders: Order[];

@@ -3,7 +3,7 @@ import {
   Package, DollarSign, Sliders, Smartphone, ShieldCheck, 
   PlusCircle, Trash2, Info, HelpCircle
 } from 'lucide-react';
-import { Product, User } from '../../types';
+import { Product, User } from '@/types';
 
 interface SettingsViewProps {
   activeSettingsTab: 'products' | 'costs' | 'params' | 'brand' | 'users';
