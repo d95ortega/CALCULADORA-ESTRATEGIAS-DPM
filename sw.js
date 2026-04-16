@@ -3,8 +3,7 @@ const CACHE_NAME = 'dpm-calc-v1';
 const ASSETS = [
   './',
   './index.html',
-  './manifest.json',
-  'https://cdn.tailwindcss.com'
+  './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {

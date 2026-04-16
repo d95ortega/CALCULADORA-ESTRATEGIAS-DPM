@@ -12,8 +12,8 @@ import {
   Maximize2, Type as FontIcon, MoveHorizontal, ChevronRight, Tags, Power, TrendingUp, ShieldCheck, PenTool, Hash, LogIn, LogOut, Package, Printer, Warehouse, Store, Truck, ClipboardList,
   Archive, FileCheck, FileEdit, Sliders
 } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+// import { jsPDF } from 'jspdf';
+// import html2canvas from 'html2canvas';
 import { 
   auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged, 
   collection, query, where, onSnapshot, doc, setDoc, addDoc, updateDoc, deleteDoc, 
@@ -637,6 +637,16 @@ const App: React.FC = () => {
     try {
       const element = document.getElementById('quote-document');
       if (!element) throw new Error();
+      
+      // Dynamic import for performance
+      const [html2canvasModule, jsPDFModule] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf')
+      ]);
+      
+      const html2canvas = html2canvasModule.default;
+      const jsPDF = jsPDFModule.jsPDF;
+
       const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'px', 'a4');
@@ -644,7 +654,12 @@ const App: React.FC = () => {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`${brand.companyName}_Cotizacion.pdf`);
-    } catch (e) { alert("Error al crear PDF"); } finally { setIsGeneratingPdf(false); }
+    } catch (e) { 
+      console.error("Error al crear PDF:", e);
+      alert("Error al crear PDF. Por favor intenta de nuevo."); 
+    } finally { 
+      setIsGeneratingPdf(false); 
+    }
   };
 
   const sendWhatsApp = () => {
