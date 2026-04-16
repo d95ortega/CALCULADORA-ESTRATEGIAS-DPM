@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect, useRef, Component, ErrorInfo, ReactNode } from 'react';
+import React, { useState, useMemo, useEffect, useRef, Component, ErrorInfo, ReactNode, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FormData, SavedJob, Product, Customer, AcrylicType, BaseType, AcrylicMaterial, QuoteHistoryEntry, Order, OrderStatus, QuoteStatus } from './types';
 import { calculateQuote } from './utils/calculator';
@@ -37,6 +37,14 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
   </svg>
 );
+
+// Lazy Views
+const DashboardView = lazy(() => import('./components/views/DashboardView'));
+const SettingsView = lazy(() => import('./components/views/SettingsView'));
+const CalculatorView = lazy(() => import('./components/views/CalculatorView'));
+const QuotesView = lazy(() => import('./components/views/QuotesView'));
+const OrdersView = lazy(() => import('./components/views/OrdersView'));
+const CustomersView = lazy(() => import('./components/views/CustomersView'));
 
 const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -771,47 +779,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex overflow-hidden">
-      <style>{`
-        :root { --primary-color: ${brand.primaryColor}; }
-        .brand-text { color: var(--primary-color); }
-        .brand-bg { background-color: var(--primary-color); }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .whatsapp-btn { background-color: #25D366; }
-        .acrylic-card { 
-          background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); 
-          border: 1px solid rgba(255, 255, 255, 0.1); 
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.05);
-          position: relative;
-          overflow: hidden;
-        }
-        .acrylic-card::after {
-          content: "";
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
-          pointer-events: none;
-        }
-        .acrylic-section { 
-          background: rgba(255, 255, 255, 0.03); 
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          backdrop-filter: blur(16px);
-          box-shadow: inset 0 0 40px rgba(255, 255, 255, 0.01), 0 4px 24px -1px rgba(0, 0, 0, 0.2);
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .acrylic-section:hover {
-          background: rgba(255, 255, 255, 0.05);
-          border-color: rgba(255, 255, 255, 0.15);
-          transform: translateY(-1px);
-          box-shadow: inset 0 0 40px rgba(255, 255, 255, 0.02), 0 12px 32px -4px rgba(0, 0, 0, 0.3);
-        }
-        .sidebar-item-active {
-          background: var(--primary-color);
-          color: white;
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-      `}</style>
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex overflow-hidden" style={{ '--primary-color': brand.primaryColor } as React.CSSProperties}>
 
       {/* SIDEBAR PERSISTENTE */}
       <aside className={`bg-slate-900 text-white transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-20' : 'w-72'} h-screen z-[100] shrink-0 border-r border-slate-800`}>
@@ -945,66 +913,108 @@ const App: React.FC = () => {
 
         {/* ÁREA DE SCROLL DE CONTENIDO */}
         <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
-          {activeView === 'dashboard' && (
-            <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pedidos Activos</p>
-                  <p className="text-3xl font-black italic tracking-tighter">{orders.length}</p>
-                </div>
-                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cotizaciones Mes</p>
-                  <p className="text-3xl font-black italic tracking-tighter">{history.length}</p>
-                </div>
-                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Clientes Totales</p>
-                  <p className="text-3xl font-black italic tracking-tighter">{customers.length}</p>
-                </div>
-                <div className="bg-slate-900 p-6 rounded-3xl shadow-xl">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Ventas Estimadas</p>
-                  <p className="text-3xl font-black italic tracking-tighter text-white">${Math.round(history.filter(h => h.status === 'PAGADA').reduce((s, h) => s + h.total, 0)).toLocaleString()}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-                  <h3 className="text-sm font-black uppercase italic tracking-tighter mb-6 flex items-center gap-2">
-                    <Clock className="w-4 h-4 brand-text" /> Actividad Reciente
-                  </h3>
-                  <div className="space-y-4">
-                    {history.slice(0, 5).map(h => (
-                      <div key={h.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-2 h-2 rounded-full ${h.status === 'PAGADA' ? 'bg-green-500' : 'bg-amber-500'}`} />
-                          <div>
-                            <p className="text-xs font-black uppercase">{h.customerName}</p>
-                            <p className="text-[9px] text-slate-400 font-bold uppercase">{new Date(h.createdAt).toLocaleDateString()}</p>
-                          </div>
-                        </div>
-                        <p className="text-xs font-black">${Math.round(h.total).toLocaleString()}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-                  <h3 className="text-sm font-black uppercase italic tracking-tighter mb-6 flex items-center gap-2">
-                    <Package className="w-4 h-4 brand-text" /> Pedidos en Producción
-                  </h3>
-                  <div className="space-y-4">
-                    {orders.slice(0, 5).map(o => (
-                      <div key={o.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                        <div>
-                          <p className="text-xs font-black uppercase">{o.customerName}</p>
-                          <p className="text-[9px] text-slate-400 font-bold uppercase">{o.status.replace('_', ' ')}</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-slate-300" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+          <Suspense fallback={
+            <div className="flex flex-col items-center justify-center h-full gap-4 animate-pulse">
+              <Loader2 className="w-12 h-12 brand-text animate-spin" />
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300">Optimizando Interfaz...</p>
             </div>
-          )}
+          }>
+            {activeView === 'dashboard' && (
+              <DashboardView 
+                orders={orders} 
+                history={history} 
+                customers={customers} 
+              />
+            )}
+
+            {activeView === 'calculator' && (
+              <CalculatorView 
+                formData={formData}
+                setFormData={setFormData}
+                products={products}
+                params={params}
+                quote={quote}
+                handleInputChange={handleInputChange}
+                handleSaveJob={handleSaveJob}
+                isAcrilicoJob={isAcrilicoJob}
+                isAnyPendon={isAnyPendon}
+                savedJobs={savedJobs}
+                setSavedJobs={setSavedJobs}
+                saveToHistoryFromDraft={saveToHistoryFromDraft}
+                quoteJobs={quoteJobs}
+                setQuoteJobs={setQuoteJobs}
+                customerInfo={customerInfo}
+                setCustomerInfo={setCustomerInfo}
+                initialStatus={initialStatus}
+                setInitialStatus={setInitialStatus}
+                isSaving={isSaving}
+                saveSuccess={saveSuccess}
+                saveToHistory={saveToHistory}
+                generatePdf={generatePdf}
+                sendWhatsApp={sendWhatsApp}
+                saveCustomer={saveCustomer}
+                setActiveView={setActiveView}
+              />
+            )}
+
+            {activeView === 'quotes' && (
+              <QuotesView 
+                history={history}
+                historySearch={historySearch}
+                setHistorySearch={setHistorySearch}
+                historyFilter={historyFilter}
+                setHistoryFilter={setHistoryFilter}
+                updateQuoteStatus={updateQuoteStatus}
+                handleDeleteQuote={handleDeleteQuote}
+                sendWhatsAppFromHistory={sendWhatsAppFromHistory}
+                loadQuoteToCalculator={loadQuoteToCalculator}
+              />
+            )}
+
+            {activeView === 'orders' && (
+              <OrdersView 
+                orders={orders}
+                updateOrderStatus={updateOrderStatus}
+                deleteOrder={deleteOrder}
+                isAdmin={isAdmin}
+              />
+            )}
+
+            {activeView === 'customers' && (
+              <CustomersView 
+                customers={customers}
+                saveCustomer={saveCustomer}
+                handleDeleteCustomer={handleDeleteCustomer}
+                loadCustomerToCalculator={loadCustomerToCalculator}
+              />
+            )}
+
+            {activeView === 'settings' && (
+              <SettingsView 
+                activeSettingsTab={activeSettingsTab}
+                setActiveSettingsTab={setActiveSettingsTab}
+                newProduct={newProduct}
+                setNewProduct={setNewProduct}
+                products={products}
+                setProducts={setProducts}
+                params={params}
+                setParams={setParams}
+                handleProductUpdate={handleProductUpdate}
+                brand={brand}
+                setBrand={setBrand}
+                authorizedUsers={authorizedUsers}
+                newUser={newUser}
+                setNewUser={setNewUser}
+                handleAddAuthorizedUser={handleAddAuthorizedUser}
+                handleDeleteAuthorizedUser={handleDeleteAuthorizedUser}
+                resetAllData={resetAllData}
+                saveLogoLocal={saveLogoLocal}
+                fileInputRef={fileInputRef}
+              />
+            )}
+          </Suspense>
+        </div>
+      </motion.div>
 
           {activeView === 'settings' && (
             <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 pb-20">
@@ -2686,104 +2696,13 @@ const App: React.FC = () => {
   </div>
 </div>
 
-<div className="pdf-capture-container">
-        <div id="quote-document" className="bg-white p-12 w-[800px]">
-          <div className="flex justify-between items-start mb-10 border-b-8 border-slate-900 pb-8">
-            <div className="flex items-center gap-6">
-              <div className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 flex items-center justify-center w-24 h-24 overflow-hidden">
-                {brand.logo ? (
-                  <img src={brand.logo} alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                ) : (
-                  <Smartphone className="brand-text w-12 h-12" />
-                )}
-              </div>
-              <div>
-                <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter leading-none">{brand.companyName}</h1>
-                <p className="text-lg font-bold text-slate-400 uppercase tracking-[0.4em] mt-2">{brand.slogan}</p>
-              </div>
-            </div>
-            <div className="text-right flex flex-col items-end gap-1">
-              <div className="bg-slate-900 text-white px-6 py-2 rounded-2xl flex items-center gap-3 shadow-xl mb-2">
-                 <Phone className="w-5 h-5 text-red-500" />
-                 <span className="font-black text-xl tracking-tighter">{brand.phone}</span>
-              </div>
-              <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{brand.address}</p>
-              <p className="text-slate-400 text-[9px] font-bold uppercase">{brand.email}</p>
-            </div>
-          </div>
-          
-          <div className="flex justify-between items-end mb-10">
-            <div>
-              <h2 className="text-5xl font-black uppercase italic tracking-tighter text-slate-900 border-l-[20px] border-red-600 pl-8">Cotización</h2>
-              <p className="text-slate-400 font-bold uppercase mt-2 ml-8 tracking-[0.3em] text-[10px]">Propuesta Comercial y Técnica</p>
-            </div>
-            <div className="text-right space-y-0.5">
-              <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest">Documento Expedido el:</p>
-              <p className="text-slate-900 text-xl font-black italic">{new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-            </div>
-          </div>
-
-          <div className="bg-slate-50 p-8 rounded-3xl border-4 border-slate-100 mb-10 flex justify-between items-center shadow-inner">
-             <div className="space-y-1">
-                <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">Cliente:</span>
-                <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">{customerInfo.name || "CLIENTE GENERAL"}</h3>
-             </div>
-             <div className="text-right space-y-1">
-                <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">Referencia</span>
-                <p className="text-xl font-black text-slate-900 italic">#DPM-{Math.floor(Math.random()*9000)+1000}</p>
-             </div>
-          </div>
-
-          <table className="w-full mb-10">
-            <thead>
-              <tr className="bg-slate-900 text-white text-[12px] font-black uppercase tracking-[0.3em]">
-                <th className="p-6 text-left rounded-l-2xl">Descripción Detallada</th>
-                <th className="p-6 text-center">Cant.</th>
-                <th className="p-6 text-right rounded-r-2xl">Total Item</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y-[8px] divide-white">
-              {quoteJobs.map((j, i) => (
-                <tr key={i} className="bg-slate-50">
-                  <td className="p-8 rounded-l-2xl">
-                    <p className="font-black text-slate-900 uppercase text-2xl mb-2 tracking-tighter italic">{j.job_description}</p>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="bg-white px-4 py-1.5 rounded-xl text-[11px] font-black text-slate-600 uppercase border-2 border-slate-100">
-                        DIM: {j.use_manual_meters ? `${j.manual_meters}m` : `${j.width}x${j.height}cm`}
-                      </span>
-                      {j.include_design && <span className="bg-red-50 px-4 py-1.5 rounded-xl text-[11px] font-black text-red-600 uppercase border-2 border-red-100 italic">Diseño Incluido</span>}
-                    </div>
-                  </td>
-                  <td className="p-8 text-center font-black text-slate-900 text-3xl italic">{j.quantity}</td>
-                  <td className="p-8 text-right font-black brand-text text-3xl rounded-r-2xl italic">${Math.round(j.finalPrice).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan={2} className="p-10 text-right font-black uppercase text-xl text-slate-400 italic">Inversión Final (IVA Incluido)</td>
-                <td className="p-10 text-right text-5xl font-black text-slate-900 italic tracking-tighter leading-none">${Math.round(quoteJobs.reduce((s, j) => s + j.finalPrice, 0)).toLocaleString()}</td>
-              </tr>
-            </tfoot>
-          </table>
-
-          <div className="grid grid-cols-2 gap-12 mt-20">
-            <div className="border-t-[4px] border-slate-100 pt-6">
-              <p className="text-slate-300 text-[10px] font-black uppercase tracking-[0.3em] mb-6">Aceptación y Firma Cliente</p>
-              <div className="h-12"></div>
-              <p className="text-slate-400 font-bold uppercase text-[11px]">{customerInfo.name || "____________________"}</p>
-            </div>
-            <div className="border-t-[4px] border-slate-900 pt-6">
-              <p className="text-slate-900 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Estrategias DPM SAS</p>
-              <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest leading-relaxed">Software de Gestión y Liquidación de Proyectos Publicitarios.</p>
-            </div>
-          </div>
-          
-          <div className="mt-16 text-center border-t border-slate-100 pt-6">
-             <p className="text-slate-300 text-[8px] font-bold uppercase tracking-[0.5em]">La Unión, Nariño • Colombia</p>
-          </div>
-        </div>
-      </div>
+      <Suspense fallback={null}>
+        <PDFTemplate 
+          brand={brand}
+          customerInfo={customerInfo}
+          quoteJobs={quoteJobs}
+        />
+      </Suspense>
     </>
   );
 };
