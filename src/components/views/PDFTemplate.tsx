@@ -71,7 +71,12 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJob
               <tr key={i} className="bg-slate-50">
                 <td className="p-8 rounded-l-2xl">
                   <p className="font-black text-slate-900 uppercase text-2xl mb-2 tracking-tighter italic">{j.job_description}</p>
-                  <div className="flex flex-wrap gap-2">
+                  {j.detailed_description && (
+                    <p className="text-slate-500 font-bold text-base mb-3 leading-tight border-l-4 border-red-500 pl-4 py-1 italic whitespace-pre-wrap">
+                      {j.detailed_description}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-2 text-center items-center">
                     <span className="bg-white px-4 py-1.5 rounded-xl text-[11px] font-black text-slate-600 uppercase border-2 border-slate-100">
                       DIM: {j.use_manual_meters ? `${j.manual_meters}m` : `${j.width}x${j.height}cm`}
                     </span>

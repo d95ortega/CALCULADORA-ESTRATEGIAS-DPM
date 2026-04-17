@@ -98,6 +98,19 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
             </select>
           </div>
 
+          <div className="space-y-2.5">
+            <label className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+              <FileText className="w-3 h-3 brand-text" /> Detalles Adicionales (Opcional)
+            </label>
+            <textarea 
+              id="detailed_description" 
+              value={formData.detailed_description || ''} 
+              onChange={(e) => setFormData(f => ({...f, detailed_description: e.target.value}))} 
+              placeholder="Ej: Color azul, acabado mate, instalar con tornillos, etc..."
+              className="w-full bg-slate-50 border-2 border-transparent ring-1 ring-slate-200 rounded-2xl px-5 py-4 text-sm font-bold focus:ring-4 focus:ring-red-500/10 focus:border-red-500 focus:bg-white transition-all shadow-sm outline-none resize-none min-h-[100px]"
+            />
+          </div>
+
           {!isAcrilicoJob && (
             <motion.div 
               initial={{ opacity: 0, height: 0 }}
@@ -414,8 +427,13 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
                     <div className="p-2.5 bg-slate-100 rounded-xl group-hover:bg-red-500 group-hover:text-white transition-all duration-300">
                       <PenTool className="w-4 h-4" />
                     </div>
-                    <div className="flex flex-col space-y-0.5">
-                      <span className="font-black text-xs uppercase text-slate-800 group-hover:brand-text transition-colors tracking-tight">{job.job_description}</span>
+                    <div className="flex flex-col space-y-0.5 max-w-[200px] truncate">
+                      <span className="font-black text-xs uppercase text-slate-800 group-hover:brand-text transition-colors tracking-tight truncate">{job.job_description}</span>
+                      {job.detailed_description && (
+                        <span className="text-[8px] text-slate-500 font-bold truncate italic">
+                          {job.detailed_description}
+                        </span>
+                      )}
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">x{job.quantity} • {job.use_manual_meters ? `${job.manual_meters}m` : `${job.width}x${job.height}cm`}</span>
                     </div>
                   </div>

@@ -74,7 +74,10 @@ const QuotesView: React.FC<QuotesViewProps> = ({
               {history
                 .filter(h => {
                   const matchesSearch = h.customerName.toLowerCase().includes(historySearch.toLowerCase()) || 
-                                      h.items.some(i => i.job_description.toLowerCase().includes(historySearch.toLowerCase()));
+                                      h.items.some(i => 
+                                        i.job_description.toLowerCase().includes(historySearch.toLowerCase()) ||
+                                        (i.detailed_description && i.detailed_description.toLowerCase().includes(historySearch.toLowerCase()))
+                                      );
                   const matchesFilter = historyFilter === 'TODAS' || h.status === historyFilter;
                   return matchesSearch && matchesFilter;
                 })
@@ -91,7 +94,9 @@ const QuotesView: React.FC<QuotesViewProps> = ({
                             <span className="bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest">Borrador</span>
                           )}
                         </div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase truncate max-w-[200px]">{h.items.map(i => i.job_description).join(', ')}</span>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase truncate max-w-[200px]">
+                          {h.items.map(i => i.detailed_description ? `${i.job_description} (${i.detailed_description})` : i.job_description).join(', ')}
+                        </span>
                       </div>
                     </td>
                     <td className="p-4">

@@ -47,6 +47,7 @@ export interface FormData {
   include_sticks: boolean;
   sticks_quantity: number;
   job_image?: string;
+  detailed_description?: string;
   // Campos DPM Avanzados
   acrylic_type?: AcrylicType;
   base_type?: BaseType;

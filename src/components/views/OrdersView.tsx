@@ -62,6 +62,24 @@ const OrdersView: React.FC<OrdersViewProps> = ({ orders, updateOrderStatus, dele
                         <User className="w-3 h-3 text-slate-400" />
                         <p className="text-xs font-black uppercase text-slate-900 truncate">{order.customerName}</p>
                       </div>
+                      
+                      <div className="pt-2 pb-1 border-t border-slate-50 space-y-2">
+                        {order.items.map((item, i) => (
+                          <div key={i} className="flex flex-col bg-slate-50/50 p-2 rounded-xl">
+                             <div className="flex justify-between items-start gap-2">
+                               <span className="text-[9px] font-black text-slate-800 uppercase leading-tight line-clamp-1 flex-1">{item.job_description}</span>
+                               <span className="text-[8px] font-black text-slate-400 uppercase italic">x{item.quantity}</span>
+                             </div>
+                             {item.detailed_description && (
+                               <span className="text-[7px] text-slate-400 font-bold truncate italic mt-0.5">{item.detailed_description}</span>
+                             )}
+                             <span className="text-[7px] text-slate-300 font-black uppercase tracking-widest mt-0.5">
+                               {item.use_manual_meters ? `${item.manual_meters}m` : `${item.width}x${item.height}cm`}
+                             </span>
+                          </div>
+                        ))}
+                      </div>
+
                       {order.customerPhone && (
                         <div className="flex items-center gap-2">
                           <Phone className="w-3 h-3 text-slate-400" />
