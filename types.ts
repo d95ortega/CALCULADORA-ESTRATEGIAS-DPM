@@ -128,6 +128,8 @@ export interface SavedJob extends FormData {
 export interface FormalQuote {
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
+  customerAddress?: string;
   date: string;
   items: SavedJob[];
 }
@@ -141,6 +143,8 @@ export interface Order {
   quoteId: string;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
+  customerAddress?: string;
   items: SavedJob[];
   total: number;
   status: OrderStatus;

@@ -142,6 +142,13 @@ const App: React.FC = () => {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [pdfConfig, setPdfConfig] = useState<{
+    customer: Customer;
+    items: SavedJob[];
+    quoteId: string;
+    isOrder: boolean;
+    date?: string;
+  } | null>(null);
 
   useEffect(() => {
     (window as any).testFirestoreConnection = async () => {
@@ -408,6 +415,8 @@ const App: React.FC = () => {
     const newEntry: Omit<QuoteHistoryEntry, 'id'> = {
       customerName: customerInfo.name || "CLIENTE GENERAL",
       customerPhone: customerInfo.phone || "",
+      customerEmail: customerInfo.email || "",
+      customerAddress: customerInfo.address || "",
       date: date,
       items: [job],
       total: total,
@@ -443,6 +452,8 @@ const App: React.FC = () => {
     const newEntry: Omit<QuoteHistoryEntry, 'id'> = {
       customerName: customerInfo.name || "CLIENTE GENERAL",
       customerPhone: customerInfo.phone || "",
+      customerEmail: customerInfo.email || "",
+      customerAddress: customerInfo.address || "",
       date: date,
       items: [...quoteJobs],
       total: total,
@@ -563,6 +574,8 @@ const App: React.FC = () => {
       quoteId: quote.id,
       customerName: quote.customerName,
       customerPhone: quote.customerPhone,
+      customerEmail: quote.customerEmail,
+      customerAddress: quote.customerAddress,
       items: quote.items,
       total: quote.total,
       status: 'NUEVA',
@@ -683,16 +696,29 @@ const App: React.FC = () => {
     }
   };
 
-  const generatePdf = async () => {
-    if (!quoteJobs.length) {
+  const generatePdf = async (customConfig?: { customer: Customer; items: SavedJob[]; quoteId: string; isOrder: boolean }) => {
+    const targetItems = customConfig ? customConfig.items : quoteJobs;
+    const targetCustomer = customConfig ? customConfig.customer : customerInfo;
+    const targetId = customConfig ? customConfig.quoteId : 'NUEVA';
+
+    if (!targetItems.length) {
       alert("No hay ítems para generar el PDF.");
       return;
     }
     
+    // Set the config so the template renders the correct data
+    setPdfConfig(customConfig || { 
+      customer: customerInfo as Customer, 
+      items: quoteJobs, 
+      quoteId: 'PROPUESTA', 
+      isOrder: false,
+      date: new Date().toISOString()
+    });
+
     setIsGeneratingPdf(true);
     try {
-      // Small timeout to ensure the PDF template is rendered with current data
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Wait for React to update the PDFTemplate in the DOM with the new pdfConfig
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       const element = document.getElementById('quote-document');
       if (!element) {
@@ -754,12 +780,14 @@ const App: React.FC = () => {
         heightLeft -= pageHeight;
       }
 
-      pdf.save(`Cotizacion_${customerInfo.name || 'Cliente'}_${new Date().getTime()}.pdf`);
+      pdf.save(`${customConfig?.isOrder ? 'Orden' : 'Cotizacion'}_${targetCustomer.name || 'Cliente'}_${targetId}.pdf`);
     } catch (e: any) { 
       console.error("Error al crear PDF:", e);
       alert(`Error al crear PDF: ${e.message || "Por favor intenta de nuevo."}`); 
     } finally { 
       setIsGeneratingPdf(false); 
+      // Optionally clear config after a delay to revert template if needed, 
+      // but leaving it is fine since it's hidden.
     }
   };
 
@@ -1135,6 +1163,7 @@ const App: React.FC = () => {
                 handleDeleteQuote={handleDeleteQuote}
                 sendWhatsAppFromHistory={sendWhatsAppFromHistory}
                 loadQuoteToCalculator={loadQuoteToCalculator}
+                generatePdf={generatePdf}
               />
             )}
 
@@ -1144,6 +1173,7 @@ const App: React.FC = () => {
                 updateOrderStatus={updateOrderStatus}
                 deleteOrder={deleteOrder}
                 isAdmin={isAdmin}
+                generatePdf={generatePdf}
               />
             )}
 
@@ -1188,8 +1218,11 @@ const App: React.FC = () => {
       <Suspense fallback={null}>
         <PDFTemplate 
           brand={brand}
-          customerInfo={customerInfo}
-          quoteJobs={quoteJobs}
+          customerInfo={pdfConfig?.customer || customerInfo as Customer}
+          quoteJobs={pdfConfig?.items || quoteJobs}
+          quoteNumber={pdfConfig?.quoteId}
+          isOrder={pdfConfig?.isOrder}
+          date={pdfConfig?.date}
         />
       </Suspense>
     </>

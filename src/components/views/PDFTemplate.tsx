@@ -6,9 +6,20 @@ interface PDFTemplateProps {
   brand: BrandSettings;
   customerInfo: Customer;
   quoteJobs: SavedJob[];
+  quoteNumber?: string;
+  isOrder?: boolean;
+  date?: string;
 }
 
-const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJobs }) => {
+const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJobs, quoteNumber, isOrder, date }) => {
+  const emissionDate = date ? new Date(date) : new Date();
+  const expirationDate = new Date();
+  expirationDate.setDate(emissionDate.getDate() + 30);
+
+  const formatCurrency = (val: number) => {
+    return `${Math.round(val).toLocaleString('es-CO')} COP`;
+  };
+
   return (
     <div 
       className="pdf-capture-container" 
@@ -26,145 +37,148 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJob
       <style>
         {`
           #quote-document {
-            font-family: Inter, ui-sans-serif, system-ui, sans-serif !important;
-            --color-slate-50: #f8fafc !important;
-            --color-slate-100: #f1f5f9 !important;
-            --color-slate-200: #e2e8f0 !important;
-            --color-slate-300: #cbd5e1 !important;
-            --color-slate-400: #94a3b8 !important;
-            --color-slate-500: #64748b !important;
-            --color-slate-600: #475569 !important;
-            --color-slate-700: #334155 !important;
-            --color-slate-800: #1e293b !important;
-            --color-slate-900: #0f172a !important;
-            --color-red-50: #fef2f2 !important;
-            --color-red-100: #fee2e2 !important;
-            --color-red-500: #ef4444 !important;
-            --color-red-600: #dc2626 !important;
-            --color-brand-red: #ec3237 !important;
+            font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+            color: #1a1a1a !important;
           }
           
-          #quote-document * {
-            border-color: inherit;
+          .pdf-label {
+            font-size: 10px !important;
+            font-weight: 800 !important;
+            color: #666 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
           }
 
-          /* Force colors to HEX for html2canvas */
-          .text-slate-900 { color: #0f172a !important; }
-          .text-slate-500 { color: #64748b !important; }
-          .text-slate-400 { color: #94a3b8 !important; }
-          .text-slate-300 { color: #cbd5e1 !important; }
-          .bg-slate-900 { background-color: #0f172a !important; }
-          .bg-slate-50 { background-color: #f8fafc !important; }
-          .border-slate-900 { border-color: #0f172a !important; }
-          .border-slate-100 { border-color: #f1f5f9 !important; }
-          .text-red-500 { color: #ef4444 !important; }
-          .text-red-600 { color: #dc2626 !important; }
-          .bg-red-50 { background-color: #fef2f2 !important; }
-          .border-red-600 { border-color: #dc2626 !important; }
-          .border-red-100 { border-color: #fee2e2 !important; }
-          .brand-text { color: #ec3237 !important; }
-          .brand-bg { background-color: #ec3237 !important; }
+          .pdf-value {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            color: #1a1a1a !important;
+          }
+
+          .pdf-table th {
+            font-size: 11px !important;
+            font-weight: 800 !important;
+            text-transform: uppercase !important;
+            color: #334155 !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            padding: 12px 8px !important;
+          }
+
+          .pdf-table td {
+            font-size: 12px !important;
+            padding: 16px 8px !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            vertical-align: top !important;
+          }
         `}
       </style>
-      <div id="quote-document" className="bg-white p-12 w-[800px]" style={{ visibility: 'visible' }}>
-        <div className="flex justify-between items-start mb-10 border-b-8 border-slate-900 pb-8">
-          <div className="flex items-center gap-6">
-            <div className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 flex items-center justify-center w-24 h-24 overflow-hidden">
+      <div id="quote-document" className="bg-white p-16 w-[800px]" style={{ visibility: 'visible' }}>
+        {/* Header Section */}
+        <div className="flex justify-between items-start mb-12">
+          <div className="space-y-4">
+            <div className="w-48 h-24 flex items-center mb-4">
               {brand.logo ? (
-                <img src={brand.logo} alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                <img src={brand.logo} alt="Logo" className="max-w-full max-h-full object-contain" referrerPolicy="no-referrer" />
               ) : (
-                <Smartphone className="brand-text w-12 h-12" />
+                <div className="w-16 h-16 brand-bg rounded-xl flex items-center justify-center text-white font-black text-2xl tracking-tighter italic">DPM</div>
               )}
             </div>
-            <div>
-              <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter leading-none">{brand.companyName}</h1>
-              <p className="text-lg font-bold text-slate-400 uppercase tracking-[0.4em] mt-2">{brand.slogan}</p>
+            <div className="space-y-0.5">
+              <p className="text-sm font-black uppercase text-slate-800 tracking-tight">{brand.companyName}</p>
+              <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                {brand.address}<br />
+                La Unión, Nariño<br />
+                Colombia<br />
+                {brand.email}<br />
+                Teléfono: {brand.phone}<br />
+                ID de la compañía: {brand.taxId}
+              </p>
             </div>
           </div>
-          <div className="text-right flex flex-col items-end gap-1">
-            <div className="bg-slate-900 text-white px-6 py-2 rounded-2xl flex items-center gap-3 shadow-xl mb-2">
-               <Phone className="w-5 h-5 text-red-500" />
-               <span className="font-black text-xl tracking-tighter">{brand.phone}</span>
+
+          <div className="text-right pt-2">
+            <h2 className="text-2xl font-black uppercase tracking-tight text-slate-900 mb-4">
+              {isOrder ? 'ORDEN DE PEDIDO' : 'COTIZACIÓN'} n.º {quoteNumber || '000000'}
+            </h2>
+            <div className="space-y-1">
+              <p className="text-[11px] text-slate-500 font-medium">
+                Fecha de emisión: {emissionDate.toLocaleDateString('es-CO')}
+              </p>
+              <p className="text-[11px] text-slate-500 font-medium">
+                Fecha de vencimiento: {expirationDate.toLocaleDateString('es-CO')}
+              </p>
             </div>
-            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{brand.address}</p>
-            <p className="text-slate-400 text-[9px] font-bold uppercase">{brand.email}</p>
-          </div>
-        </div>
-        
-        <div className="flex justify-between items-end mb-10">
-          <div>
-            <h2 className="text-5xl font-black uppercase italic tracking-tighter text-slate-900 border-l-[20px] border-red-600 pl-8">Cotización</h2>
-            <p className="text-slate-400 font-bold uppercase mt-2 ml-8 tracking-[0.3em] text-[10px]">Propuesta Comercial y Técnica</p>
-          </div>
-          <div className="text-right space-y-0.5">
-            <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest">Documento Expedido el:</p>
-            <p className="text-slate-900 text-xl font-black italic">{new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
           </div>
         </div>
 
-        <div className="bg-slate-50 p-8 rounded-3xl border-4 border-slate-100 mb-10 flex justify-between items-center shadow-inner">
-           <div className="space-y-1">
-              <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">Cliente:</span>
-              <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">{customerInfo.name || "CLIENTE GENERAL"}</h3>
-           </div>
-           <div className="text-right space-y-1">
-              <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">Referencia</span>
-              <p className="text-xl font-black text-slate-900 italic">#DPM-{Math.floor(Math.random()*9000)+1000}</p>
-           </div>
+        {/* Client Info Section */}
+        <div className="mb-12">
+          <p className="pdf-label mb-2">Información del cliente:</p>
+          <div className="space-y-0.5">
+            <p className="text-sm font-black uppercase text-slate-800">{customerInfo.name || "CLIENTE GENERAL"}</p>
+            <p className="text-[11px] text-slate-500 font-medium">{customerInfo.email || "No registrado"}</p>
+            <p className="text-[11px] text-slate-500 font-medium">Teléfono: {customerInfo.phone || "No registrado"}</p>
+          </div>
         </div>
 
-        <table className="w-full mb-10">
+        {/* Products Title */}
+        <div className="mb-2 border-b-2 border-slate-100 pb-2">
+          <h3 className="text-lg font-black uppercase text-slate-900 tracking-tight">
+            {customerInfo.name ? `${customerInfo.name.toUpperCase()} ` : ''}PRODUCTOS {isOrder ? 'A ENTREGAR' : 'COTIZADOS'}
+          </h3>
+        </div>
+
+        {/* Main Table */}
+        <table className="w-full pdf-table mb-8">
           <thead>
-            <tr className="bg-slate-900 text-white text-[12px] font-black uppercase tracking-[0.3em]">
-              <th className="p-6 text-left rounded-l-2xl">Descripción Detallada</th>
-              <th className="p-6 text-center">Cant.</th>
-              <th className="p-6 text-right rounded-r-2xl">Total Item</th>
+            <tr>
+              <th className="text-left w-2/3">Producto o servicio</th>
+              <th className="text-center">Cantidad</th>
+              <th className="text-right">Precio</th>
+              <th className="text-right">Total</th>
             </tr>
           </thead>
-          <tbody className="divide-y-[8px] divide-white">
+          <tbody>
             {quoteJobs.map((j, i) => (
-              <tr key={i} className="bg-slate-50">
-                <td className="p-8 rounded-l-2xl">
-                  <p className="font-black text-slate-900 uppercase text-2xl mb-2 tracking-tighter italic">{j.job_description}</p>
-                  {j.detailed_description && (
-                    <p className="text-slate-500 font-bold text-base mb-3 leading-tight border-l-4 border-red-500 pl-4 py-1 italic whitespace-pre-wrap">
-                      {j.detailed_description}
-                    </p>
-                  )}
-                  <div className="flex flex-wrap gap-2 text-center items-center">
-                    <span className="bg-white px-4 py-1.5 rounded-xl text-[11px] font-black text-slate-600 uppercase border-2 border-slate-100">
-                      DIM: {j.use_manual_meters ? `${j.manual_meters}m` : `${j.width}x${j.height}cm`}
-                    </span>
-                    {j.include_design && <span className="bg-red-50 px-4 py-1.5 rounded-xl text-[11px] font-black text-red-600 uppercase border-2 border-red-100 italic">Diseño Incluido</span>}
-                  </div>
+              <tr key={i}>
+                <td>
+                  <p className="font-bold text-slate-900 uppercase mb-1 leading-tight">{j.job_description}</p>
+                  <p className="text-[10px] text-slate-500 uppercase font-medium leading-relaxed">
+                    DE {j.use_manual_meters ? `${j.manual_meters}M` : `${j.width}X${j.height} CM`}
+                    {j.detailed_description && <><br />{j.detailed_description.toUpperCase()}</>}
+                  </p>
                 </td>
-                <td className="p-8 text-center font-black text-slate-900 text-3xl italic">{j.quantity}</td>
-                <td className="p-8 text-right font-black brand-text text-3xl rounded-r-2xl italic">${Math.round(j.finalPrice).toLocaleString()}</td>
+                <td className="text-center font-bold text-slate-900">{j.quantity}</td>
+                <td className="text-right text-slate-700 font-medium">{formatCurrency(j.finalPrice / j.quantity)}</td>
+                <td className="text-right font-bold text-slate-900">{formatCurrency(j.finalPrice)}</td>
               </tr>
             ))}
           </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan={2} className="p-10 text-right font-black uppercase text-xl text-slate-400 italic">Inversión Final (IVA Incluido)</td>
-              <td className="p-10 text-right text-5xl font-black text-slate-900 italic tracking-tighter leading-none">${Math.round(quoteJobs.reduce((s, j) => s + j.finalPrice, 0)).toLocaleString()}</td>
-            </tr>
-          </tfoot>
         </table>
 
-        <div className="grid grid-cols-2 gap-12 mt-20">
-          <div className="border-t-[4px] border-slate-100 pt-6">
-            <p className="text-slate-300 text-[10px] font-black uppercase tracking-[0.3em] mb-6">Aceptación y Firma Cliente</p>
-            <div className="h-12"></div>
-            <p className="text-slate-400 font-bold uppercase text-[11px]">{customerInfo.name || "____________________"}</p>
-          </div>
-          <div className="border-t-[4px] border-slate-900 pt-6">
-            <p className="text-slate-900 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Estrategias DPM SAS</p>
-            <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest leading-relaxed">Software de Gestión y Liquidación de Proyectos Publicitarios.</p>
+        {/* Totals Section */}
+        <div className="flex justify-end mb-16 px-2">
+          <div className="w-64 space-y-3">
+             <div className="flex justify-between items-center border-t-2 border-slate-900 pt-4">
+               <span className="text-sm font-black uppercase text-slate-900 tracking-tight">TOTAL FINAL</span>
+               <span className="text-lg font-black text-slate-900 italic">
+                 {formatCurrency(quoteJobs.reduce((s, j) => s + j.finalPrice, 0))}
+               </span>
+             </div>
+             <p className="text-[9px] text-slate-400 font-bold uppercase text-right italic">
+               * Valores incluyen IVA del 19%
+             </p>
           </div>
         </div>
-        
-        <div className="mt-16 text-center border-t border-slate-100 pt-6">
-           <p className="text-slate-300 text-[8px] font-bold uppercase tracking-[0.5em]">La Unión, Nariño • Colombia</p>
+
+        {/* Terms or Footer if any, matching the clean image style */}
+        <div className="mt-auto pt-12 border-t border-slate-100 text-center">
+          <p className="text-[9px] text-slate-300 font-black uppercase tracking-[0.4em] italic mb-2">
+            {brand.companyName} • LA UNIÓN, NARIÑO • COLOMBIA
+          </p>
+          <p className="text-[8px] text-slate-200 uppercase font-bold">
+            Documento generado electrónicamente por Software Estrategias DPM
+          </p>
         </div>
       </div>
     </div>

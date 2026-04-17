@@ -14,11 +14,13 @@ interface QuotesViewProps {
   handleDeleteQuote: (id: string) => void;
   sendWhatsAppFromHistory: (h: QuoteHistoryEntry) => void;
   loadQuoteToCalculator: (h: QuoteHistoryEntry) => void;
+  generatePdf: (customConfig?: { customer: any; items: any[]; quoteId: string; isOrder: boolean; date?: string }) => Promise<void>;
 }
 
 const QuotesView: React.FC<QuotesViewProps> = ({
   history, historySearch, setHistorySearch, historyFilter, setHistoryFilter,
-  updateQuoteStatus, handleDeleteQuote, sendWhatsAppFromHistory, loadQuoteToCalculator
+  updateQuoteStatus, handleDeleteQuote, sendWhatsAppFromHistory, loadQuoteToCalculator,
+  generatePdf
 }) => {
   return (
     <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 pb-20">
@@ -121,7 +123,27 @@ const QuotesView: React.FC<QuotesViewProps> = ({
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-2 text-right">
+                        <button 
+                          onClick={() => generatePdf({ 
+                            customer: { 
+                              id: '', 
+                              name: h.customerName, 
+                              phone: h.customerPhone, 
+                              email: h.customerEmail || '', 
+                              address: h.customerAddress || '', 
+                              taxId: '' 
+                            }, 
+                            items: h.items, 
+                            quoteId: String(history.length - idx).padStart(6, '0'),
+                            isOrder: !!h.orderId,
+                            date: h.date
+                          })}
+                          title="Descargar PDF"
+                          className="p-2 bg-white rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm border border-slate-100"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                        </button>
                         <button 
                           onClick={() => loadQuoteToCalculator(h)}
                           title="Cargar Cotización"

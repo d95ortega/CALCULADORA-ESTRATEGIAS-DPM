@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Package, Search, Clock, Trash2, ChevronRight, User, Phone 
+  Package, Search, Clock, Trash2, ChevronRight, User, Phone, FileText 
 } from 'lucide-react';
 import { Order, OrderStatus } from '@/types';
 
@@ -9,9 +9,10 @@ interface OrdersViewProps {
   updateOrderStatus: (id: string, status: OrderStatus) => void;
   deleteOrder: (id: string) => void;
   isAdmin: boolean;
+  generatePdf: (customConfig?: { customer: any; items: any[]; quoteId: string; isOrder: boolean; date?: string }) => Promise<void>;
 }
 
-const OrdersView: React.FC<OrdersViewProps> = ({ orders, updateOrderStatus, deleteOrder, isAdmin }) => {
+const OrdersView: React.FC<OrdersViewProps> = ({ orders, updateOrderStatus, deleteOrder, isAdmin, generatePdf }) => {
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 pb-20">
       <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
@@ -49,6 +50,26 @@ const OrdersView: React.FC<OrdersViewProps> = ({ orders, updateOrderStatus, dele
                     <div className="flex justify-between items-start mb-4">
                       <span className="text-[9px] font-black brand-text uppercase">{order.id}</span>
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => generatePdf({ 
+                            customer: { 
+                              id: '', 
+                              name: order.customerName, 
+                              phone: order.customerPhone, 
+                              email: order.customerEmail || '', 
+                              address: order.customerAddress || '', 
+                              taxId: '' 
+                            }, 
+                            items: order.items, 
+                            quoteId: order.id,
+                            isOrder: true,
+                            date: order.createdAt
+                          })}
+                          className="text-slate-300 hover:text-blue-500 transition-colors"
+                          title="Descargar Orden de Pedido"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                        </button>
                         <button onClick={() => deleteOrder(order.id)} className="text-slate-300 hover:text-red-500 transition-colors">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
