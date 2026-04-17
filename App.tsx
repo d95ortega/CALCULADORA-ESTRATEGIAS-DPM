@@ -47,6 +47,19 @@ const OrdersView = lazy(() => import('./src/components/views/OrdersView'));
 const CustomersView = lazy(() => import('./src/components/views/CustomersView'));
 import PDFTemplate from './src/components/views/PDFTemplate';
 
+// Helper to remove undefined values for Firestore
+const sanitize = (obj: any): any => {
+  if (Array.isArray(obj)) return obj.map(sanitize);
+  if (obj !== null && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([_, v]) => v !== undefined)
+        .map(([k, v]) => [k, sanitize(v)])
+    );
+  }
+  return obj;
+};
+
 const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [brand, setBrand] = useState(() => {
@@ -317,7 +330,7 @@ const App: React.FC = () => {
     if (!isAdmin) return;
     const path = 'company_data/dpm/settings/current';
     try {
-      await setDoc(doc(db, path), { brand, params, products });
+      await setDoc(doc(db, path), sanitize({ brand, params, products }));
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, path);
     }
@@ -366,11 +379,12 @@ const App: React.FC = () => {
     if (user && isAuthorized) {
       const path = 'company_data/dpm/customers';
       try {
+        const sanitized = sanitize(data);
         const existing = customers.find(c => c.name.toLowerCase() === data.name.toLowerCase());
         if (existing) {
-          await updateDoc(doc(db, path, existing.id), { ...data, quotesCount: existing.quotesCount });
+          await updateDoc(doc(db, path, existing.id), { ...sanitized, quotesCount: existing.quotesCount });
         } else {
-          await addDoc(collection(db, path), data);
+          await addDoc(collection(db, path), sanitized);
         }
       } catch (error) {
         handleFirestoreError(error, OperationType.WRITE, path);
@@ -404,7 +418,7 @@ const App: React.FC = () => {
     try {
       if (user && isAuthorized) {
         const path = 'company_data/dpm/quotes';
-        await addDoc(collection(db, path), newEntry);
+        await addDoc(collection(db, path), sanitize(newEntry));
       } else {
         const id = Math.random().toString(36).substr(2, 9);
         const entry = { ...newEntry, id } as QuoteHistoryEntry;
@@ -439,7 +453,7 @@ const App: React.FC = () => {
     try {
       if (user && isAuthorized) {
         const path = 'company_data/dpm/quotes';
-        const docRef = await addDoc(collection(db, path), newEntry);
+        const docRef = await addDoc(collection(db, path), sanitize(newEntry));
         if (status === 'PAGADA') {
           await convertToOrder({ ...newEntry, id: docRef.id } as QuoteHistoryEntry);
         }
@@ -560,7 +574,7 @@ const App: React.FC = () => {
       const orderPath = 'company_data/dpm/orders';
       const quotePath = `company_data/dpm/quotes`;
       try {
-        await setDoc(doc(db, orderPath, orderId), newOrder);
+        await setDoc(doc(db, orderPath, orderId), sanitize(newOrder));
         await updateDoc(doc(db, quotePath, quote.id), { orderId });
         setActiveSettingsTab('orders');
       } catch (error) {
