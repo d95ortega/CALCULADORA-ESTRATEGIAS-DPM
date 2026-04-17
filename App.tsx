@@ -45,7 +45,7 @@ const CalculatorView = lazy(() => import('./src/components/views/CalculatorView'
 const QuotesView = lazy(() => import('./src/components/views/QuotesView'));
 const OrdersView = lazy(() => import('./src/components/views/OrdersView'));
 const CustomersView = lazy(() => import('./src/components/views/CustomersView'));
-const PDFTemplate = lazy(() => import('./src/components/views/PDFTemplate'));
+import PDFTemplate from './src/components/views/PDFTemplate';
 
 const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -129,8 +129,33 @@ const App: React.FC = () => {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    (window as any).testFirestoreConnection = async () => {
+      try {
+        await getDocFromServer(doc(db, 'company_data', 'dpm'));
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
+      }
+    };
+  }, []);
+
   const [authorizedUsers, setAuthorizedUsers] = useState<any[]>([]);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [authTimeout, setAuthTimeout] = useState(false);
+
+  useEffect(() => {
+    if (user && isAuthorized === null) {
+      const timer = setTimeout(() => {
+        setAuthTimeout(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    } else {
+      setAuthTimeout(false);
+    }
+  }, [user, isAuthorized]);
+
   const [historySearch, setHistorySearch] = useState('');
   const [historyFilter, setHistoryFilter] = useState<QuoteStatus | 'TODAS'>('TODAS');
   const [isSaving, setIsSaving] = useState(false);
@@ -645,11 +670,20 @@ const App: React.FC = () => {
   };
 
   const generatePdf = async () => {
-    if (!quoteJobs.length) return;
+    if (!quoteJobs.length) {
+      alert("No hay ítems para generar el PDF.");
+      return;
+    }
+    
     setIsGeneratingPdf(true);
     try {
+      // Small timeout to ensure the PDF template is rendered with current data
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const element = document.getElementById('quote-document');
-      if (!element) throw new Error();
+      if (!element) {
+        throw new Error("El elemento 'quote-document' no fue encontrado en el DOM.");
+      }
       
       // Dynamic import for performance
       const [html2canvasModule, jsPDFModule] = await Promise.all([
@@ -660,16 +694,42 @@ const App: React.FC = () => {
       const html2canvas = html2canvasModule.default;
       const jsPDF = jsPDFModule.jsPDF;
 
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const canvas = await html2canvas(element, { 
+        scale: 2, 
+        useCORS: true, 
+        backgroundColor: '#ffffff',
+        logging: false,
+        allowTaint: true
+      });
+      
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'px', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`${brand.companyName}_Cotizacion.pdf`);
-    } catch (e) { 
+      
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      
+      const imgWidth = pageWidth;
+      const imgHeight = (canvasHeight * pageWidth) / canvasWidth;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`Cotizacion_${customerInfo.name || 'Cliente'}_${new Date().getTime()}.pdf`);
+    } catch (e: any) { 
       console.error("Error al crear PDF:", e);
-      alert("Error al crear PDF. Por favor intenta de nuevo."); 
+      alert(`Error al crear PDF: ${e.message || "Por favor intenta de nuevo."}`); 
     } finally { 
       setIsGeneratingPdf(false); 
     }
@@ -826,6 +886,31 @@ const App: React.FC = () => {
           >
             <LogOut className="w-5 h-5" /> Salir
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (authTimeout) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden p-10 text-center space-y-6">
+          <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-2xl mx-auto flex items-center justify-center">
+            <HelpCircle className="w-8 h-8 animate-bounce" />
+          </div>
+          <h2 className="text-xl font-black uppercase tracking-tight text-slate-900">Verificando Conexión...</h2>
+          <p className="text-[10px] text-slate-400 font-bold uppercase leading-relaxed">
+            La verificación de autorización está tardando más de lo esperado. Por favor verifica que:
+          </p>
+          <ul className="text-left text-[9px] font-bold text-slate-600 space-y-2 list-none uppercase tracking-tighter">
+            <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full brand-bg" /> Tienes conexión a internet estable.</li>
+            <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full brand-bg" /> Firestore está activo en tu consola Firebase.</li>
+            <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full brand-bg" /> Las reglas de seguridad están desplegadas.</li>
+          </ul>
+          <div className="pt-4 flex flex-col gap-3">
+             <button onClick={() => window.location.reload()} className="w-full brand-bg text-white py-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Reintentar</button>
+             <button onClick={logout} className="w-full bg-slate-100 text-slate-400 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest">Cerrar Sesión</button>
+          </div>
         </div>
       </div>
     );
@@ -1064,6 +1149,7 @@ const App: React.FC = () => {
                 resetAllData={resetAllData}
                 saveLogoLocal={saveLogoLocal}
                 fileInputRef={fileInputRef}
+                isAdmin={isAdmin}
               />
             )}
           </Suspense>

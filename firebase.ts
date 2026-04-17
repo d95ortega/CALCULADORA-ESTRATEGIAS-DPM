@@ -44,8 +44,9 @@ export interface FirestoreErrorInfo {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errorMsg = error instanceof Error ? error.message : String(error);
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errorMsg,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -63,6 +64,13 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     path
   };
   console.error('Firestore Error: ', JSON.stringify(errInfo));
+  
+  if (errorMsg.includes('permission-denied') || errorMsg.includes('insufficient permissions')) {
+    alert("Error de Permisos: No tienes autorización para realizar esta acción o los datos no cumplen con las reglas de seguridad. Por favor, contacta al administrador.");
+  } else {
+    alert("Error de Base de Datos: " + errorMsg);
+  }
+  
   throw new Error(JSON.stringify(errInfo));
 }
 

@@ -42,6 +42,7 @@ const QuotesView: React.FC<QuotesViewProps> = ({
             <option value="ENVIADA">Enviadas</option>
             <option value="APROBADA">Aprobadas</option>
             <option value="PAGADA">Pagadas</option>
+            <option value="RECHAZADA">Rechazadas</option>
           </select>
         </div>
         <div className="relative w-full md:w-80">
@@ -135,7 +136,7 @@ const QuotesView: React.FC<QuotesViewProps> = ({
                               <MessageCircle className="w-3.5 h-3.5" /> Reenviar por WhatsApp
                             </button>
                             <div className="h-px bg-slate-100 my-2" />
-                            {(['PENDIENTE', 'ENVIADA', 'APROBADA', 'PAGADA'] as QuoteStatus[]).map(status => (
+                            {(['PENDIENTE', 'ENVIADA', 'APROBADA', 'PAGADA', 'RECHAZADA'] as QuoteStatus[]).map(status => (
                               <button
                                 key={status}
                                 onClick={() => updateQuoteStatus(h.id, status)}
@@ -145,6 +146,7 @@ const QuotesView: React.FC<QuotesViewProps> = ({
                                   status === 'PAGADA' ? 'bg-green-500' : 
                                   status === 'APROBADA' ? 'bg-blue-500' :
                                   status === 'ENVIADA' ? 'bg-amber-500' :
+                                  status === 'RECHAZADA' ? 'bg-red-500' :
                                   'bg-slate-400'
                                 }`} />
                                 Marcar como {status}

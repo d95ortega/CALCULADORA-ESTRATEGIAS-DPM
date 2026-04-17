@@ -21,66 +21,79 @@ const OrdersView: React.FC<OrdersViewProps> = ({ orders, updateOrderStatus, dele
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {(['NUEVA', 'EN_PRODUCCION', 'LISTO_PARA_ENTREGA'] as OrderStatus[]).map(status => (
-          <div key={status} className="flex flex-col gap-4">
-            <div className="flex items-center justify-between px-2">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                {status.replace(/_/g, ' ')}
-              </h3>
-              <span className="text-[8px] bg-slate-100 text-slate-500 font-black px-2 py-0.5 rounded-full">
-                {orders.filter(o => o.status === status).length}
-              </span>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {(['NUEVA', 'PRODUCCION', 'TERMINADO', 'FINALIZADOS'] as string[]).map(columnStatus => {
+          const statusList = columnStatus === 'FINALIZADOS' 
+            ? ['ENTREGADO', 'RECIBIDO', 'ENVIADO'] as OrderStatus[]
+            : [columnStatus as OrderStatus];
             
-            <div className="space-y-4">
-              {orders.filter(o => o.status === status).map(order => (
-                <div key={order.id} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:scale-[1.02] transition-all group">
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="text-[9px] font-black brand-text uppercase">{order.id}</span>
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {isAdmin && (
-                        <button onClick={() => deleteOrder(order.id)} className="text-slate-300 hover:text-red-500 transition-colors">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+          const columnOrders = orders.filter(o => statusList.includes(o.status));
+          
+          return (
+            <div key={columnStatus} className="flex flex-col gap-4">
+              <div className="flex items-center justify-between px-2">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  {columnStatus === 'PRODUCCION' ? 'En Producción' : 
+                   columnStatus === 'TERMINADO' ? 'Terminado' : 
+                   columnStatus === 'FINALIZADOS' ? 'Finalizados' : 
+                   columnStatus}
+                </h3>
+                <span className="text-[8px] bg-slate-100 text-slate-500 font-black px-2 py-0.5 rounded-full">
+                  {columnOrders.length}
+                </span>
+              </div>
+              
+              <div className="space-y-4">
+                {columnOrders.map(order => (
+                  <div key={order.id} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:scale-[1.02] transition-all group">
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="text-[9px] font-black brand-text uppercase">{order.id}</span>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {isAdmin && (
+                          <button onClick={() => deleteOrder(order.id)} className="text-slate-300 hover:text-red-500 transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <User className="w-3 h-3 text-slate-400" />
+                        <p className="text-xs font-black uppercase text-slate-900 truncate">{order.customerName}</p>
+                      </div>
+                      {order.customerPhone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-3 h-3 text-slate-400" />
+                          <p className="text-[10px] font-bold text-slate-500 uppercase">{order.customerPhone}</p>
+                        </div>
                       )}
                     </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <User className="w-3 h-3 text-slate-400" />
-                      <p className="text-xs font-black uppercase text-slate-900 truncate">{order.customerName}</p>
-                    </div>
-                    {order.customerPhone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-3 h-3 text-slate-400" />
-                        <p className="text-[10px] font-bold text-slate-500 uppercase">{order.customerPhone}</p>
-                      </div>
-                    )}
-                  </div>
 
-                  <div className="mt-4 pt-4 border-t flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase">
-                      <Clock className="w-3 h-3" />
-                      {new Date(order.updatedAt).toLocaleDateString()}
+                    <div className="mt-4 pt-4 border-t flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase">
+                        <Clock className="w-3 h-3" />
+                        {new Date(order.updatedAt).toLocaleDateString()}
+                      </div>
+                      <select 
+                        value={order.status}
+                        onChange={(e) => updateOrderStatus(order.id, e.target.value as OrderStatus)}
+                        className="bg-slate-50 border-none text-[8px] font-black uppercase tracking-wider rounded-lg px-2 py-1 outline-none ring-1 ring-slate-100 focus:ring-red-500 transition-all"
+                      >
+                        <option value="NUEVA">NUEVA</option>
+                        <option value="PRODUCCION">PRODUCCIÓN</option>
+                        <option value="TERMINADO">TERMINADO</option>
+                        <option value="ENTREGADO">ENTREGADO</option>
+                        <option value="RECIBIDO">RECIBIDO</option>
+                        <option value="ENVIADO">ENVIADO</option>
+                      </select>
                     </div>
-                    <select 
-                      value={order.status}
-                      onChange={(e) => updateOrderStatus(order.id, e.target.value as OrderStatus)}
-                      className="bg-slate-50 border-none text-[8px] font-black uppercase tracking-wider rounded-lg px-2 py-1 outline-none ring-1 ring-slate-100 focus:ring-red-500 transition-all"
-                    >
-                      <option value="NUEVA">NUEVA</option>
-                      <option value="EN_PRODUCCION">PRODUCCIÓN</option>
-                      <option value="LISTO_PARA_ENTREGA">LISTO</option>
-                      <option value="ENTREGADO">ENTREGADO</option>
-                    </select>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

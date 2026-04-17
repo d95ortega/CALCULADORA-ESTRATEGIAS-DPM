@@ -94,25 +94,25 @@ service cloud.firestore {
     function isValidQuote(data) {
       return hasOnlyAllowedFields(['customerName', 'customerPhone', 'date', 'total', 'items', 'orderId', 'status', 'isDraft']) &&
              data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
-             data.customerPhone is string && data.customerPhone.size() <= 20 &&
+             data.customerPhone is string && data.customerPhone.size() <= 60 &&
              isValidDateString(data.date) &&
              data.total is number && data.total >= 0 &&
              data.items is list && data.items.size() <= 50 &&
              (!('orderId' in data) || (data.orderId is string)) &&
-             data.status in ['PENDIENTE', 'ENVIADA', 'APROBADA', 'PAGADA'];
+             data.status in ['PENDIENTE', 'ENVIADA', 'APROBADA', 'PAGADA', 'RECHAZADA'];
     }
 
     function isValidOrder(data) {
       return hasOnlyAllowedFields(['quoteId', 'customerName', 'customerPhone', 'total', 'status', 'createdAt', 'updatedAt', 'items', 'notes']) &&
              data.quoteId is string &&
              data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
-             data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 20 &&
+             data.customerPhone is string && data.customerPhone.size() >= 0 && data.customerPhone.size() <= 60 &&
              data.total is number && data.total >= 0 &&
-             data.status in ['NUEVA', 'CORTE_LASER', 'PLOTTER_CORTE', 'BODEGA_FABRICA', 'BODEGA_PUNTO_VENTA', 'ENTREGADO', 'DESCARGADOS'] &&
+             data.status in ['NUEVA', 'PRODUCCION', 'TERMINADO', 'ENTREGADO', 'RECIBIDO', 'ENVIADO'] &&
              isValidDateString(data.createdAt) &&
              isValidDateString(data.updatedAt) &&
              data.items is list && data.items.size() <= 50 &&
-             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000));
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000));
     }
 
     // ===============================================================

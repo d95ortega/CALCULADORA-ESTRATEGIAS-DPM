@@ -25,6 +25,7 @@ interface SettingsViewProps {
   resetAllData: () => void;
   saveLogoLocal: (e: React.ChangeEvent<HTMLInputElement>) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
+  isAdmin: boolean;
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({
@@ -34,8 +35,26 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   brand, setBrand,
   authorizedUsers, newUser, setNewUser, 
   handleAddAuthorizedUser, handleDeleteAuthorizedUser,
-  resetAllData, saveLogoLocal, fileInputRef
+  resetAllData, saveLogoLocal, fileInputRef, isAdmin
 }) => {
+  const [testStatus, setTestStatus] = React.useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [testMessage, setTestMessage] = React.useState('');
+
+  const runDiagnostic = async () => {
+    setTestStatus('testing');
+    try {
+       const result = await (window as any).testFirestoreConnection?.();
+       if (result?.success) {
+         setTestStatus('success');
+         setTestMessage('Conexión exitosa y permisos verificados.');
+       } else {
+         throw new Error(result?.error || 'Error de permisos o configuración.');
+       }
+    } catch (error) {
+      setTestStatus('error');
+      setTestMessage(error instanceof Error ? error.message : 'Error de permisos o conexión.');
+    }
+  };
   return (
     <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 pb-20">
       <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
@@ -245,7 +264,23 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </div>
               
-              <div className="pt-6 border-t">
+              <div className="pt-6 border-t space-y-4">
+                 <div className="bg-slate-50 p-4 rounded-2xl border flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                     <div className={`w-3 h-3 rounded-full ${testStatus === 'success' ? 'bg-green-500' : testStatus === 'error' ? 'bg-red-500' : 'bg-slate-300'}`} />
+                     <div>
+                       <p className="text-[10px] font-black uppercase">Estado Base de Datos</p>
+                       <p className="text-[8px] text-slate-500 font-bold uppercase">{testMessage || 'Sin diagnóstico'}</p>
+                     </div>
+                   </div>
+                   <button 
+                    onClick={runDiagnostic} 
+                    disabled={testStatus === 'testing'}
+                    className="px-4 py-2 bg-white text-slate-600 border rounded-xl text-[9px] font-black uppercase hover:bg-slate-50 transition-all disabled:opacity-50"
+                   >
+                     {testStatus === 'testing' ? 'Probando...' : 'Re-verificar'}
+                   </button>
+                 </div>
                  <button onClick={resetAllData} className="w-full bg-slate-100 text-slate-400 hover:text-red-500 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">Restablecer Configuración de Fábrica</button>
               </div>
             </div>
@@ -269,11 +304,11 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                   />
                   <select 
                     value={newUser.role}
-                    onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                    onChange={(e) => setNewUser({ ...newUser, role: e.target.value as any })}
                     className="bg-slate-800 border border-slate-700 p-4 rounded-xl text-white text-[10px] font-black uppercase outline-none"
                   >
-                    <option value="DESIGN">DISEÑO</option>
-                    <option value="ADMIN">ADMIN</option>
+                    <option value="user">DISEÑO</option>
+                    <option value="admin">ADMIN</option>
                   </select>
                   <button type="submit" className="brand-bg text-white px-8 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20 active:scale-95 transition-all">Añadir</button>
                 </form>

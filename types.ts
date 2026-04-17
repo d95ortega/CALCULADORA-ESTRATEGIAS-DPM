@@ -131,9 +131,9 @@ export interface FormalQuote {
   items: SavedJob[];
 }
 
-export type QuoteStatus = 'PENDIENTE' | 'ENVIADA' | 'APROBADA' | 'PAGADA';
+export type QuoteStatus = 'PENDIENTE' | 'ENVIADA' | 'APROBADA' | 'PAGADA' | 'RECHAZADA';
 
-export type OrderStatus = 'NUEVA' | 'CORTE_LASER' | 'PLOTTER_CORTE' | 'BODEGA_FABRICA' | 'BODEGA_PUNTO_VENTA' | 'ENTREGADO' | 'DESCARGADOS';
+export type OrderStatus = 'NUEVA' | 'PRODUCCION' | 'TERMINADO' | 'ENTREGADO' | 'RECIBIDO' | 'ENVIADO';
 
 export interface Order {
   id: string;
