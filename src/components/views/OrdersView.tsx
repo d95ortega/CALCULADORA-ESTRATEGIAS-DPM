@@ -49,11 +49,9 @@ const OrdersView: React.FC<OrdersViewProps> = ({ orders, updateOrderStatus, dele
                     <div className="flex justify-between items-start mb-4">
                       <span className="text-[9px] font-black brand-text uppercase">{order.id}</span>
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {isAdmin && (
-                          <button onClick={() => deleteOrder(order.id)} className="text-slate-300 hover:text-red-500 transition-colors">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                        <button onClick={() => deleteOrder(order.id)} className="text-slate-300 hover:text-red-500 transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                     

@@ -128,19 +128,19 @@ service cloud.firestore {
       match /customers/{customerId} {
         allow read: if isAuthorized();
         allow create, update: if isAuthorized() && isValidCustomer(request.resource.data);
-        allow delete: if isAdmin();
+        allow delete: if isAuthorized();
       }
 
       match /quotes/{quoteId} {
         allow read: if isAuthorized();
         allow create, update: if isAuthorized() && isValidQuote(request.resource.data);
-        allow delete: if isAdmin();
+        allow delete: if isAuthorized();
       }
 
       match /orders/{orderId} {
         allow read: if isAuthorized();
         allow create, update: if isAuthorized() && isValidOrder(request.resource.data);
-        allow delete: if isAdmin();
+        allow delete: if isAuthorized();
       }
 
       match /settings/current {
