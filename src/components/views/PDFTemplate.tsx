@@ -23,6 +23,49 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJob
         backgroundColor: 'white'
       }}
     >
+      <style>
+        {`
+          #quote-document {
+            font-family: Inter, ui-sans-serif, system-ui, sans-serif !important;
+            --color-slate-50: #f8fafc !important;
+            --color-slate-100: #f1f5f9 !important;
+            --color-slate-200: #e2e8f0 !important;
+            --color-slate-300: #cbd5e1 !important;
+            --color-slate-400: #94a3b8 !important;
+            --color-slate-500: #64748b !important;
+            --color-slate-600: #475569 !important;
+            --color-slate-700: #334155 !important;
+            --color-slate-800: #1e293b !important;
+            --color-slate-900: #0f172a !important;
+            --color-red-50: #fef2f2 !important;
+            --color-red-100: #fee2e2 !important;
+            --color-red-500: #ef4444 !important;
+            --color-red-600: #dc2626 !important;
+            --color-brand-red: #ec3237 !important;
+          }
+          
+          #quote-document * {
+            border-color: inherit;
+          }
+
+          /* Force colors to HEX for html2canvas */
+          .text-slate-900 { color: #0f172a !important; }
+          .text-slate-500 { color: #64748b !important; }
+          .text-slate-400 { color: #94a3b8 !important; }
+          .text-slate-300 { color: #cbd5e1 !important; }
+          .bg-slate-900 { background-color: #0f172a !important; }
+          .bg-slate-50 { background-color: #f8fafc !important; }
+          .border-slate-900 { border-color: #0f172a !important; }
+          .border-slate-100 { border-color: #f1f5f9 !important; }
+          .text-red-500 { color: #ef4444 !important; }
+          .text-red-600 { color: #dc2626 !important; }
+          .bg-red-50 { background-color: #fef2f2 !important; }
+          .border-red-600 { border-color: #dc2626 !important; }
+          .border-red-100 { border-color: #fee2e2 !important; }
+          .brand-text { color: #ec3237 !important; }
+          .brand-bg { background-color: #ec3237 !important; }
+        `}
+      </style>
       <div id="quote-document" className="bg-white p-12 w-[800px]" style={{ visibility: 'visible' }}>
         <div className="flex justify-between items-start mb-10 border-b-8 border-slate-900 pb-8">
           <div className="flex items-center gap-6">
