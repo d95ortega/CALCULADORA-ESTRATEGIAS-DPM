@@ -10,8 +10,20 @@ interface PDFTemplateProps {
 
 const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJobs }) => {
   return (
-    <div className="pdf-capture-container" style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-      <div id="quote-document" className="bg-white p-12 w-[800px]">
+    <div 
+      className="pdf-capture-container" 
+      style={{ 
+        position: 'fixed', 
+        left: 0, 
+        top: 0, 
+        width: '850px',
+        zIndex: -100, 
+        visibility: 'hidden', 
+        pointerEvents: 'none',
+        backgroundColor: 'white'
+      }}
+    >
+      <div id="quote-document" className="bg-white p-12 w-[800px]" style={{ visibility: 'visible' }}>
         <div className="flex justify-between items-start mb-10 border-b-8 border-slate-900 pb-8">
           <div className="flex items-center gap-6">
             <div className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 flex items-center justify-center w-24 h-24 overflow-hidden">

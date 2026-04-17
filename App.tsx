@@ -692,12 +692,23 @@ const App: React.FC = () => {
     setIsGeneratingPdf(true);
     try {
       // Small timeout to ensure the PDF template is rendered with current data
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 800));
       
       const element = document.getElementById('quote-document');
       if (!element) {
         throw new Error("El elemento 'quote-document' no fue encontrado en el DOM.");
       }
+
+      // Ensure all images within the element are fully loaded
+      const images = element.getElementsByTagName('img');
+      const imagePromises = Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      });
+      await Promise.all(imagePromises);
       
       // Dynamic import for performance
       const [html2canvasModule, jsPDFModule] = await Promise.all([
@@ -709,11 +720,15 @@ const App: React.FC = () => {
       const jsPDF = jsPDFModule.jsPDF;
 
       const canvas = await html2canvas(element, { 
-        scale: 2, 
+        scale: 1.5, // Slightly lower scale for better performance and stability
         useCORS: true, 
         backgroundColor: '#ffffff',
-        logging: false,
-        allowTaint: true
+        logging: true, // Enable logging to see potential issues in dev console
+        allowTaint: true,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 850, // Force a specific width for rendering consistency
+        windowHeight: element.scrollHeight || 1200
       });
       
       const imgData = canvas.toDataURL('image/png');
@@ -721,22 +736,21 @@ const App: React.FC = () => {
       
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
       
       const imgWidth = pageWidth;
-      const imgHeight = (canvasHeight * pageWidth) / canvasWidth;
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
       
       let heightLeft = imgHeight;
       let position = 0;
 
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      // Add the first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
       heightLeft -= pageHeight;
 
-      while (heightLeft >= 0) {
+      while (heightLeft > 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
         heightLeft -= pageHeight;
       }
 
