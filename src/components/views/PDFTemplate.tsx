@@ -87,20 +87,20 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJob
           }
         `}
       </style>
-      <div id="quote-document" className="bg-white p-12 w-[794px]" style={{ visibility: 'visible' }}>
+      <div id="quote-document" className="p-12 w-[794px]" style={{ backgroundColor: '#ffffff', visibility: 'visible' }}>
         {/* Header Section */}
-        <div className="flex justify-between items-start mb-10 border-b border-gray-100 pb-8">
+        <div className="flex justify-between items-start mb-10 pb-8" style={{ borderBottom: '1px solid #f3f4f6' }}>
           <div className="flex gap-6 items-start">
-            <div className="w-32 h-20 flex items-center justify-center p-2 border border-gray-50 rounded bg-gray-50/30">
+            <div className="w-32 h-20 flex items-center justify-center p-2 rounded" style={{ border: '1px solid #f9fafb', backgroundColor: 'rgba(249, 250, 251, 0.3)' }}>
               {brand.logo ? (
                 <img src={brand.logo} alt="Logo" className="max-w-full max-h-full object-contain" referrerPolicy="no-referrer" />
               ) : (
-                <div className="text-xl font-bold text-gray-300">DPM</div>
+                <div className="text-xl font-bold" style={{ color: '#d1d5db' }}>DPM</div>
               )}
             </div>
             <div className="space-y-1">
               <p className="company-name">{brand.companyName}</p>
-              <p className="text-[10px] text-gray-500 font-normal leading-relaxed">
+              <p className="text-[10px] font-normal leading-relaxed" style={{ color: '#6b7280' }}>
                 {brand.address}<br />
                 La Unión, Nariño, Colombia<br />
                 {brand.email}<br />
@@ -114,14 +114,14 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJob
             <h2 className="document-title mb-2">
               {isOrder ? 'ORDEN DE PEDIDO' : 'COTIZACIÓN'}
             </h2>
-            <p className="text-[11px] font-bold text-gray-800">N.º {quoteNumber || '000000'}</p>
+            <p className="text-[11px] font-bold" style={{ color: '#1f2937' }}>N.º {quoteNumber || '000000'}</p>
             <div className="mt-4 space-y-0.5">
-              <p className="text-[9px] text-gray-500">
-                Emisión: <span className="text-gray-800 font-medium">{emissionDate.toLocaleDateString('es-CO')}</span>
+              <p className="text-[9px]" style={{ color: '#6b7280' }}>
+                Emisión: <span className="font-medium" style={{ color: '#1f2937' }}>{emissionDate.toLocaleDateString('es-CO')}</span>
               </p>
               {!isOrder && (
-                <p className="text-[9px] text-gray-500">
-                  Vence: <span className="text-gray-800 font-medium">{expirationDate.toLocaleDateString('es-CO')}</span>
+                <p className="text-[9px]" style={{ color: '#6b7280' }}>
+                  Vence: <span className="font-medium" style={{ color: '#1f2937' }}>{expirationDate.toLocaleDateString('es-CO')}</span>
                 </p>
               )}
             </div>
@@ -132,13 +132,13 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJob
         <div className="grid grid-cols-2 gap-8 mb-10">
           <div>
             <p className="pdf-label">Cliente:</p>
-            <p className="text-[11px] font-bold text-gray-900 uppercase">{customerInfo.name || "CLIENTE GENERAL"}</p>
-            <p className="text-[10px] text-gray-600 font-normal mt-1">{customerInfo.email}</p>
-            <p className="text-[10px] text-gray-600 font-normal">{customerInfo.phone}</p>
+            <p className="text-[11px] font-bold uppercase" style={{ color: '#111827' }}>{customerInfo.name || "CLIENTE GENERAL"}</p>
+            <p className="text-[10px] font-normal mt-1" style={{ color: '#4b5563' }}>{customerInfo.email}</p>
+            <p className="text-[10px] font-normal" style={{ color: '#4b5563' }}>{customerInfo.phone}</p>
           </div>
           <div className="text-right">
             <p className="pdf-label">Lugar de servicio:</p>
-            <p className="text-[10px] text-gray-600 font-normal">La Unión, Nariño, Colombia</p>
+            <p className="text-[10px] font-normal" style={{ color: '#4b5563' }}>La Unión, Nariño, Colombia</p>
           </div>
         </div>
 
@@ -156,15 +156,15 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJob
             {quoteJobs.map((j, i) => (
               <tr key={i}>
                 <td>
-                  <p className="font-bold text-gray-800 uppercase mb-0.5">{j.job_description}</p>
-                  <p className="text-[9px] text-gray-500 uppercase font-normal leading-normal">
+                  <p className="font-bold uppercase mb-0.5" style={{ color: '#1f2937' }}>{j.job_description}</p>
+                  <p className="text-[9px] uppercase font-normal leading-normal" style={{ color: '#6b7280' }}>
                     Medidas: {j.use_manual_meters ? `${j.manual_meters}M` : `${j.width}X${j.height} CM`}
                     {j.detailed_description && <><br />{j.detailed_description.toUpperCase()}</>}
                   </p>
                 </td>
-                <td className="text-center text-gray-800">{j.quantity}</td>
-                <td className="text-right text-gray-600 font-normal">{formatCurrency(j.finalPrice / j.quantity)}</td>
-                <td className="text-right font-bold text-gray-900">{formatCurrency(j.finalPrice)}</td>
+                <td className="text-center" style={{ color: '#1f2937' }}>{j.quantity}</td>
+                <td className="text-right font-normal" style={{ color: '#4b5563' }}>{formatCurrency(j.finalPrice / j.quantity)}</td>
+                <td className="text-right font-bold" style={{ color: '#111827' }}>{formatCurrency(j.finalPrice)}</td>
               </tr>
             ))}
           </tbody>
@@ -172,14 +172,14 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJob
 
         {/* Totals Section */}
         <div className="flex justify-end mb-20">
-          <div className="w-72 space-y-2 border-t border-gray-200 pt-4">
+          <div className="w-72 space-y-2 pt-4" style={{ borderTop: '1px solid #e5e7eb' }}>
              <div className="flex justify-between items-center px-1">
-               <span className="text-[11px] font-bold text-gray-700">INVERSIÓN TOTAL (IVA INCL.)</span>
-               <span className="text-[13px] font-bold text-black italic">
+               <span className="text-[11px] font-bold" style={{ color: '#374151' }}>INVERSIÓN TOTAL (IVA INCL.)</span>
+               <span className="text-[13px] font-bold italic" style={{ color: '#000000' }}>
                  {formatCurrency(quoteJobs.reduce((s, j) => s + j.finalPrice, 0))}
                </span>
              </div>
-             <p className="text-[8px] text-gray-400 font-medium text-right mt-2 uppercase tracking-tight">
+             <p className="text-[8px] font-medium text-right mt-2 uppercase tracking-tight" style={{ color: '#9ca3af' }}>
                * Valores expresados en pesos colombianos (COP)
              </p>
           </div>
@@ -187,19 +187,19 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJob
 
         {/* Acceptance Section - Cleaner */}
         <div className="grid grid-cols-2 gap-12 mt-auto pt-16 opacity-60">
-          <div className="border-t border-gray-300 pt-3">
-            <p className="text-[8px] font-bold text-gray-400 uppercase mb-8">Aceptación y firma cliente</p>
-            <p className="text-[9px] text-gray-400 uppercase font-black">{customerInfo.name || 'Firma autorizada'}</p>
+          <div className="pt-3" style={{ borderTop: '1px solid #d1d5db' }}>
+            <p className="text-[8px] font-bold uppercase mb-8" style={{ color: '#9ca3af' }}>Aceptación y firma cliente</p>
+            <p className="text-[9px] uppercase font-black" style={{ color: '#9ca3af' }}>{customerInfo.name || 'Firma autorizada'}</p>
           </div>
-          <div className="border-t border-gray-300 pt-3 text-right">
-            <p className="text-[8px] font-bold text-gray-400 uppercase mb-8">Estrategias DPM SAS</p>
-            <p className="text-[7px] text-gray-300 uppercase leading-loose">Software de gestión y liquidación de proyectos publicitarios</p>
+          <div className="pt-3 text-right" style={{ borderTop: '1px solid #d1d5db' }}>
+            <p className="text-[8px] font-bold uppercase mb-8" style={{ color: '#9ca3af' }}>Estrategias DPM SAS</p>
+            <p className="text-[7px] uppercase leading-loose" style={{ color: '#d1d5db' }}>Software de gestión y liquidación de proyectos publicitarios</p>
           </div>
         </div>
 
         {/* Global Footer */}
-        <div className="text-center mt-12 pt-8 border-t border-gray-50">
-          <p className="text-[8px] text-gray-300 uppercase font-bold tracking-[0.2em]">
+        <div className="text-center mt-12 pt-8" style={{ borderTop: '1px solid #f9fafb' }}>
+          <p className="text-[8px] uppercase font-bold tracking-[0.2em]" style={{ color: '#d1d5db' }}>
             La Unión, Nariño • Colombia
           </p>
         </div>
