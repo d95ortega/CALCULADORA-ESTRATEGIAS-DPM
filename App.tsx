@@ -753,8 +753,8 @@ const App: React.FC = () => {
         allowTaint: true,
         scrollX: 0,
         scrollY: 0,
-        windowWidth: 850, // Force a specific width for rendering consistency
-        windowHeight: element.scrollHeight || 1200
+        windowWidth: 800, // Force a specific width for rendering consistency
+        windowHeight: element.scrollHeight || 1123
       });
       
       const imgData = canvas.toDataURL('image/png');
