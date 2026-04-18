@@ -40,6 +40,40 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJob
             font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif !important;
             color: #333333 !important;
             line-height: 1.4 !important;
+            /* Anti-Tailwind v4 Reset */
+            --tw-ring-color: transparent !important;
+            --tw-shadow: 0 0 #0000 !important;
+            --tw-shadow-colored: 0 0 #0000 !important;
+            --tw-ring-offset-shadow: 0 0 #0000 !important;
+            --tw-ring-shadow: 0 0 #0000 !important;
+            --tw-inset-shadow: 0 0 #0000 !important;
+            --tw-inset-shadow-colored: 0 0 #0000 !important;
+            --tw-ring-inset: !important;
+            border-color: #f3f4f6 !important;
+          }
+
+          /* Purge all possible oklch sources from Tailwind variables */
+          #quote-document, #quote-document * {
+            --tw-ring-color: transparent !important;
+            --tw-shadow: 0 0 #0000 !important;
+            --tw-ring-shadow: 0 0 #0000 !important;
+            --tw-inset-shadow: 0 0 #0000 !important;
+            --color-white: #ffffff !important;
+            --color-black: #000000 !important;
+            outline-color: transparent !important;
+          }
+
+          #quote-document table {
+            display: table !important;
+          }
+          #quote-document tr {
+            display: table-row !important;
+          }
+          #quote-document th, #quote-document td {
+            display: table-cell !important;
+          }
+          #quote-document span {
+            display: inline !important;
           }
           
           .pdf-label {
@@ -87,20 +121,52 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJob
           }
         `}
       </style>
-      <div id="quote-document" className="p-12 w-[794px]" style={{ backgroundColor: '#ffffff', visibility: 'visible' }}>
+      <div id="quote-document" style={{ 
+        backgroundColor: '#ffffff', 
+        visibility: 'visible',
+        padding: '30px', /* p-12 equivalent */
+        width: '794px',
+        boxSizing: 'border-box',
+        minHeight: '1123px',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
         {/* Header Section */}
-        <div className="flex justify-between items-start mb-10 pb-8" style={{ borderBottom: '1px solid #f3f4f6' }}>
-          <div className="flex gap-6 items-start">
-            <div className="w-32 h-20 flex items-center justify-center p-2 rounded" style={{ border: '1px solid #f9fafb', backgroundColor: 'rgba(249, 250, 251, 0.3)' }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'flex-start', 
+          marginBottom: '25px', 
+          paddingBottom: '20px', 
+          borderBottom: '1px solid #f3f4f6' 
+        }}>
+          <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+            <div style={{ 
+              width: '128px', 
+              height: '80px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              padding: '8px', 
+              borderRadius: '4px', 
+              border: '1px solid #f9fafb', 
+              backgroundColor: 'rgba(249, 250, 251, 0.3)' 
+            }}>
               {brand.logo ? (
-                <img src={brand.logo} alt="Logo" className="max-w-full max-h-full object-contain" referrerPolicy="no-referrer" />
+                <img src={brand.logo} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} referrerPolicy="no-referrer" />
               ) : (
-                <div className="text-xl font-bold" style={{ color: '#d1d5db' }}>DPM</div>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#d1d5db' }}>DPM</div>
               )}
             </div>
-            <div className="space-y-1">
-              <p className="company-name">{brand.companyName}</p>
-              <p className="text-[10px] font-normal leading-relaxed" style={{ color: '#6b7280' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <p className="company-name" style={{ margin: 0 }}>{brand.companyName}</p>
+              <p style={{ 
+                fontSize: '10px', 
+                fontWeight: 'normal', 
+                lineHeight: '1.4', 
+                color: '#6b7280',
+                margin: 0
+              }}>
                 {brand.address}<br />
                 La Unión, Nariño, Colombia<br />
                 {brand.email}<br />
@@ -110,18 +176,18 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJob
             </div>
           </div>
 
-          <div className="text-right">
-            <h2 className="document-title mb-2">
+          <div style={{ textAlign: 'right' }}>
+            <h2 className="document-title" style={{ marginBottom: '8px', margin: 0 }}>
               {isOrder ? 'ORDEN DE PEDIDO' : 'COTIZACIÓN'}
             </h2>
-            <p className="text-[11px] font-bold" style={{ color: '#1f2937' }}>N.º {quoteNumber || '000000'}</p>
-            <div className="mt-4 space-y-0.5">
-              <p className="text-[9px]" style={{ color: '#6b7280' }}>
-                Emisión: <span className="font-medium" style={{ color: '#1f2937' }}>{emissionDate.toLocaleDateString('es-CO')}</span>
+            <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>N.º {quoteNumber || '000000'}</p>
+            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <p style={{ fontSize: '9px', color: '#6b7280', margin: 0 }}>
+                Emisión: <span style={{ fontWeight: 500, color: '#1f2937' }}>{emissionDate.toLocaleDateString('es-CO')}</span>
               </p>
               {!isOrder && (
-                <p className="text-[9px]" style={{ color: '#6b7280' }}>
-                  Vence: <span className="font-medium" style={{ color: '#1f2937' }}>{expirationDate.toLocaleDateString('es-CO')}</span>
+                <p style={{ fontSize: '9px', color: '#6b7280', margin: 0 }}>
+                  Vence: <span style={{ fontWeight: 500, color: '#1f2937' }}>{expirationDate.toLocaleDateString('es-CO')}</span>
                 </p>
               )}
             </div>
@@ -129,77 +195,89 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJob
         </div>
 
         {/* Client Info Section */}
-        <div className="grid grid-cols-2 gap-8 mb-10">
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 1fr', 
+          gap: '32px', 
+          marginBottom: '40px' 
+        }}>
           <div>
             <p className="pdf-label">Cliente:</p>
-            <p className="text-[11px] font-bold uppercase" style={{ color: '#111827' }}>{customerInfo.name || "CLIENTE GENERAL"}</p>
-            <p className="text-[10px] font-normal mt-1" style={{ color: '#4b5563' }}>{customerInfo.email}</p>
-            <p className="text-[10px] font-normal" style={{ color: '#4b5563' }}>{customerInfo.phone}</p>
+            <p style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: '#111827', margin: 0 }}>{customerInfo.name || "CLIENTE GENERAL"}</p>
+            <p style={{ fontSize: '10px', fontWeight: 'normal', marginTop: '4px', color: '#4b5563', margin: 0 }}>{customerInfo.email}</p>
+            <p style={{ fontSize: '10px', fontWeight: 'normal', color: '#4b5563', margin: 0 }}>{customerInfo.phone}</p>
           </div>
-          <div className="text-right">
+          <div style={{ textAlign: 'right' }}>
             <p className="pdf-label">Lugar de servicio:</p>
-            <p className="text-[10px] font-normal" style={{ color: '#4b5563' }}>La Unión, Nariño, Colombia</p>
+            <p style={{ fontSize: '10px', fontWeight: 'normal', color: '#4b5563', margin: 0 }}>La Unión, Nariño, Colombia</p>
           </div>
         </div>
 
         {/* Main Table */}
-        <table className="w-full pdf-table mb-8">
+        <table className="pdf-table" style={{ width: '100%', marginBottom: '32px', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th className="text-left">Descripción detallada del producto o servicio</th>
-              <th className="text-center w-24">Cant.</th>
-              <th className="text-right w-32">Vr. Unitario</th>
-              <th className="text-right w-32">Total Item</th>
+              <th style={{ textAlign: 'left' }}>Descripción detallada del producto o servicio</th>
+              <th style={{ textAlign: 'center', width: '96px' }}>Cant.</th>
+              <th style={{ textAlign: 'right', width: '128px' }}>Vr. Unitario</th>
+              <th style={{ textAlign: 'right', width: '128px' }}>Total Item</th>
             </tr>
           </thead>
           <tbody>
             {quoteJobs.map((j, i) => (
               <tr key={i}>
                 <td>
-                  <p className="font-bold uppercase mb-0.5" style={{ color: '#1f2937' }}>{j.job_description}</p>
-                  <p className="text-[9px] uppercase font-normal leading-normal" style={{ color: '#6b7280' }}>
+                  <p style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px', color: '#1f2937', margin: 0 }}>{j.job_description}</p>
+                  <p style={{ fontSize: '9px', textTransform: 'uppercase', fontWeight: 'normal', lineHeight: '1.4', color: '#6b7280', margin: 0 }}>
                     Medidas: {j.use_manual_meters ? `${j.manual_meters}M` : `${j.width}X${j.height} CM`}
                     {j.detailed_description && <><br />{j.detailed_description.toUpperCase()}</>}
                   </p>
                 </td>
-                <td className="text-center" style={{ color: '#1f2937' }}>{j.quantity}</td>
-                <td className="text-right font-normal" style={{ color: '#4b5563' }}>{formatCurrency(j.finalPrice / j.quantity)}</td>
-                <td className="text-right font-bold" style={{ color: '#111827' }}>{formatCurrency(j.finalPrice)}</td>
+                <td style={{ textAlign: 'center', color: '#1f2937' }}>{j.quantity}</td>
+                <td style={{ textAlign: 'right', fontWeight: 'normal', color: '#4b5563' }}>{formatCurrency(j.finalPrice / j.quantity)}</td>
+                <td style={{ textAlign: 'right', fontWeight: 'bold', color: '#111827' }}>{formatCurrency(j.finalPrice)}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
         {/* Totals Section */}
-        <div className="flex justify-end mb-20">
-          <div className="w-72 space-y-2 pt-4" style={{ borderTop: '1px solid #e5e7eb' }}>
-             <div className="flex justify-between items-center px-1">
-               <span className="text-[11px] font-bold" style={{ color: '#374151' }}>INVERSIÓN TOTAL (IVA INCL.)</span>
-               <span className="text-[13px] font-bold italic" style={{ color: '#000000' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '80px' }}>
+          <div style={{ width: '288px', display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
+               <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#374151' }}>INVERSIÓN TOTAL (IVA INCL.)</span>
+               <span style={{ fontSize: '13px', fontStyle: 'italic', fontWeight: 'bold', color: '#000000' }}>
                  {formatCurrency(quoteJobs.reduce((s, j) => s + j.finalPrice, 0))}
                </span>
              </div>
-             <p className="text-[8px] font-medium text-right mt-2 uppercase tracking-tight" style={{ color: '#9ca3af' }}>
+             <p style={{ fontSize: '8px', fontWeight: 500, textAlign: 'right', marginTop: '8px', textTransform: 'uppercase', color: '#9ca3af', margin: 0 }}>
                * Valores expresados en pesos colombianos (COP)
              </p>
           </div>
         </div>
 
         {/* Acceptance Section - Cleaner */}
-        <div className="grid grid-cols-2 gap-12 mt-auto pt-16 opacity-60">
-          <div className="pt-3" style={{ borderTop: '1px solid #d1d5db' }}>
-            <p className="text-[8px] font-bold uppercase mb-8" style={{ color: '#9ca3af' }}>Aceptación y firma cliente</p>
-            <p className="text-[9px] uppercase font-black" style={{ color: '#9ca3af' }}>{customerInfo.name || 'Firma autorizada'}</p>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 1fr', 
+          gap: '48px', 
+          marginTop: 'auto', 
+          paddingTop: '64px', 
+          opacity: 0.6 
+        }}>
+          <div style={{ paddingTop: '12px', borderTop: '1px solid #d1d5db' }}>
+            <p style={{ fontSize: '8px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '32px', color: '#9ca3af', margin: 0 }}>Aceptación y firma cliente</p>
+            <p style={{ fontSize: '9px', textTransform: 'uppercase', fontWeight: 900, color: '#9ca3af', margin: 0 }}>{customerInfo.name || 'Firma autorizada'}</p>
           </div>
-          <div className="pt-3 text-right" style={{ borderTop: '1px solid #d1d5db' }}>
-            <p className="text-[8px] font-bold uppercase mb-8" style={{ color: '#9ca3af' }}>Estrategias DPM SAS</p>
-            <p className="text-[7px] uppercase leading-loose" style={{ color: '#d1d5db' }}>Software de gestión y liquidación de proyectos publicitarios</p>
+          <div style={{ paddingTop: '12px', textAlign: 'right', borderTop: '1px solid #d1d5db' }}>
+            <p style={{ fontSize: '8px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '32px', color: '#9ca3af', margin: 0 }}>Estrategias DPM SAS</p>
+            <p style={{ fontSize: '7px', textTransform: 'uppercase', lineHeight: '2', color: '#d1d5db', margin: 0 }}>Software de gestión y liquidación de proyectos publicitarios</p>
           </div>
         </div>
 
         {/* Global Footer */}
-        <div className="text-center mt-12 pt-8" style={{ borderTop: '1px solid #f9fafb' }}>
-          <p className="text-[8px] uppercase font-bold tracking-[0.2em]" style={{ color: '#d1d5db' }}>
+        <div style={{ textAlign: 'center', marginTop: '48px', paddingTop: '32px', borderTop: '1px solid #f9fafb' }}>
+          <p style={{ fontSize: '8px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.2em', color: '#d1d5db', margin: 0 }}>
             La Unión, Nariño • Colombia
           </p>
         </div>
