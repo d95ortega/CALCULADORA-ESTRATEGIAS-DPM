@@ -142,20 +142,17 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({ brand, customerInfo, quoteJob
         }}>
           <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
             <div style={{ 
-              width: '128px', 
               height: '80px', 
               display: 'flex', 
               alignItems: 'center', 
-              justifyContent: 'center', 
-              padding: '8px', 
-              borderRadius: '4px', 
-              border: '1px solid #f9fafb', 
-              backgroundColor: 'rgba(249, 250, 251, 0.3)' 
+              justifyContent: 'flex-start'
             }}>
               {brand.logo ? (
-                <img src={brand.logo} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} referrerPolicy="no-referrer" />
+                <img src={brand.logo} alt="Logo" style={{ maxHeight: '80px', maxWidth: '240px', objectFit: 'contain' }} referrerPolicy="no-referrer" />
               ) : (
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#d1d5db' }}>DPM</div>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#111111', textTransform: 'uppercase', letterSpacing: '-0.025em' }}>
+                  {brand.companyName || 'DPM'}
+                </div>
               )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
