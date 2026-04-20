@@ -124,7 +124,17 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                   <input type="number" placeholder="P. Final $" value={newProduct.priceFinal || ''} onChange={e => setNewProduct({...newProduct, priceFinal: parseFloat(e.target.value) || 0})} className="w-full bg-slate-800 p-3 rounded-xl text-white text-xs font-bold border-none ring-1 ring-slate-700 outline-none" />
                   <input type="number" placeholder="P. Publi $" value={newProduct.pricePublisher || ''} onChange={e => setNewProduct({...newProduct, pricePublisher: parseFloat(e.target.value) || 0})} className="w-full bg-slate-800 p-3 rounded-xl text-white text-xs font-bold border-none ring-1 ring-slate-700 outline-none" />
                 </div>
-                <button onClick={() => { if(newProduct.name) { setProducts(p => [newProduct, ...p]); setNewProduct({name:'', priceFinal:0, pricePublisher:0, designTime:30}); } }} className="w-full brand-bg text-white py-4 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-red-500/20 active:scale-95 transition-all">Crear Producto</button>
+                <div className="flex items-center gap-3 bg-slate-800 p-3 rounded-xl border border-slate-700">
+                  <input 
+                    type="checkbox" 
+                    id="isFixedPrice" 
+                    checked={newProduct.isFixedPrice || false} 
+                    onChange={e => setNewProduct({...newProduct, isFixedPrice: e.target.checked})} 
+                    className="w-4 h-4 rounded border-slate-700 text-red-600 focus:ring-red-500 bg-slate-700"
+                  />
+                  <label htmlFor="isFixedPrice" className="text-[10px] font-black uppercase text-slate-300 cursor-pointer">Es Precio Fijo (No multiplicar por área)</label>
+                </div>
+                <button onClick={() => { if(newProduct.name) { setProducts(p => [newProduct, ...p]); setNewProduct({name:'', priceFinal:0, pricePublisher:0, designTime:30, isFixedPrice: false}); } }} className="w-full brand-bg text-white py-4 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-red-500/20 active:scale-95 transition-all">Crear Producto</button>
               </div>
               <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 no-scrollbar">
                 {products.map((p, idx) => (
@@ -133,6 +143,16 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="grid grid-cols-2 gap-4">
                         <div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-black">$</span><input type="number" step="0.01" value={p.priceFinal} onChange={e => handleProductUpdate(idx, 'priceFinal', parseFloat(e.target.value) || 0)} className="w-full p-2 pl-5 bg-white rounded-lg ring-1 ring-slate-100 text-xs font-bold" /></div>
                         <div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-black">$</span><input type="number" step="0.01" value={p.pricePublisher} onChange={e => handleProductUpdate(idx, 'pricePublisher', parseFloat(e.target.value) || 0)} className="w-full p-2 pl-5 bg-white rounded-lg ring-1 ring-slate-100 text-xs font-bold" /></div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input 
+                        type="checkbox" 
+                        id={`isFixedPrice-${idx}`}
+                        checked={p.isFixedPrice || false} 
+                        onChange={e => handleProductUpdate(idx, 'isFixedPrice', e.target.checked)} 
+                        className="w-3 h-3 rounded border-slate-300 text-red-600 focus:ring-red-500"
+                      />
+                      <label htmlFor={`isFixedPrice-${idx}`} className="text-[9px] font-black uppercase text-slate-500 cursor-pointer">Precio Fijo (No calcular por área)</label>
                     </div>
                     </div>
                 ))}
@@ -271,14 +291,19 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
           {activeSettingsTab === 'brand' && (
             <div className="space-y-6">
-              <div className="bg-slate-100 p-8 rounded-3xl border-2 border-dashed border-slate-200 text-center space-y-4">
-                <div className={`${brand.logo ? 'bg-white' : 'bg-white'} mx-auto w-24 h-24 rounded-3xl shadow-xl flex items-center justify-center overflow-hidden border border-slate-200 p-0`}>
-                  {brand.logo ? <img src={brand.logo} alt="Logo preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : <Smartphone className="w-10 h-10 text-slate-200" />}
+              <div className="bg-slate-100 p-8 rounded-3xl border-2 border-dashed border-slate-200 text-center space-y-6">
+                <div className="mx-auto w-32 h-32 bg-white rounded-3xl shadow-xl flex items-center justify-center overflow-hidden border border-slate-200 p-2">
+                  {brand.logo ? <img src={brand.logo} alt="Logo preview" className="w-full h-full object-contain" referrerPolicy="no-referrer" /> : <Smartphone className="w-12 h-12 text-slate-200" />}
                 </div>
-                <div>
+                <div className="flex flex-col items-center gap-3">
                   <input type="file" ref={fileInputRef} onChange={saveLogoLocal} accept="image/*" className="hidden" />
-                  <button onClick={() => fileInputRef.current?.click()} className="px-6 py-3 brand-bg text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20 active:scale-95 transition-all">Cambiar Logo</button>
-                  <p className="text-[8px] text-slate-400 uppercase font-bold mt-3">Recomendado: PNG Transparente 512x512px</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => fileInputRef.current?.click()} className="px-6 py-3 brand-bg text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20 active:scale-95 transition-all">Cambiar Logo</button>
+                    {brand.logo && (
+                      <button onClick={() => setBrand({...brand, logo: null})} className="px-4 py-3 bg-white text-red-500 rounded-xl text-[10px] font-black uppercase border border-red-100 hover:bg-red-50 transition-all">Quitar</button>
+                    )}
+                  </div>
+                  <p className="text-[8px] text-slate-400 uppercase font-bold">Recomendado: PNG Transparente 512x512px</p>
                 </div>
               </div>
               

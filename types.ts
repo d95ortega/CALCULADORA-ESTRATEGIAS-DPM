@@ -26,6 +26,7 @@ export interface Product {
   priceFinal: number;
   pricePublisher: number;
   designTime: number;
+  isFixedPrice?: boolean;
 }
 
 export interface FormData {

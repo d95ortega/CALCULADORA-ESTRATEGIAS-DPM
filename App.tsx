@@ -101,7 +101,7 @@ const App: React.FC = () => {
       designTime: PRODUCT_DESIGN_TIMES[name] || 0
     }));
   });
-  const [newProduct, setNewProduct] = useState<Product>({ name: '', priceFinal: 0, pricePublisher: 0, designTime: 30 });
+  const [newProduct, setNewProduct] = useState<Product>({ name: '', priceFinal: 0, pricePublisher: 0, designTime: 30, isFixedPrice: false });
   const [formData, setFormData] = useState<FormData>({
     customer_type: 'final', job_description: '', width: 100, height: 100, quantity: 1,
     production_time: 30, cutting_hours: 0, laminate_speed: '0', installation: 0,
@@ -910,8 +910,12 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
         <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden p-10 text-center space-y-8 animate-in zoom-in-95">
-          <div className="w-24 h-24 brand-bg rounded-3xl mx-auto flex items-center justify-center shadow-2xl shadow-red-500/20 rotate-3">
-            <Calculator className="w-12 h-12 text-white" />
+          <div className={`w-24 h-24 ${brand.logo ? 'bg-white p-2' : 'brand-bg rotate-3 shadow-red-500/20'} rounded-3xl mx-auto flex items-center justify-center shadow-2xl`}>
+            {brand.logo ? (
+              <img src={brand.logo} alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+            ) : (
+              <Calculator className="w-12 h-12 text-white" />
+            )}
           </div>
           <div>
             <h1 className="text-4xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Calculadora DPM</h1>
@@ -1005,9 +1009,9 @@ const App: React.FC = () => {
       {/* SIDEBAR PERSISTENTE */}
       <aside className={`bg-slate-900 text-white transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-20' : 'w-72'} h-screen z-[100] shrink-0 border-r border-slate-800`}>
         <div className="p-6 flex items-center gap-4 border-b border-slate-800/50">
-          <div className={`${brand.logo ? 'bg-white' : 'brand-bg p-2'} rounded-xl shadow-lg shadow-black/20 overflow-hidden flex items-center justify-center w-10 h-10 shrink-0`}>
+          <div className={`${brand.logo ? 'bg-white p-1' : 'brand-bg p-2'} rounded-xl shadow-lg shadow-black/20 overflow-hidden flex items-center justify-center w-10 h-10 shrink-0`}>
             {brand.logo ? (
-              <img src={brand.logo} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              <img src={brand.logo} alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
             ) : (
               <Smartphone className="text-white w-6 h-6" />
             )}

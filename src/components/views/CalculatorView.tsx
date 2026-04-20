@@ -46,6 +46,9 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
   initialStatus, setInitialStatus, isSaving, saveSuccess,
   saveToHistory, generatePdf, sendWhatsApp, saveCustomer, setActiveView
 }) => {
+  const selectedProduct = products.find(p => p.name === formData.job_description);
+  const isFixedPrice = selectedProduct?.isFixedPrice || false;
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -117,18 +120,18 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
               animate={{ opacity: 1, height: 'auto' }}
               className="grid grid-cols-2 gap-5"
             >
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase ml-1 tracking-widest">Ancho (cm)</label>
+              <div className={`space-y-2 ${isFixedPrice ? 'opacity-40 grayscale' : ''}`}>
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-1 tracking-widest">{isFixedPrice ? 'Ancho (N/A)' : 'Ancho (cm)'}</label>
                 <div className="relative">
-                  <input type="number" id="width" value={formData.width} onChange={handleInputChange} className="w-full bg-slate-50 p-4 rounded-2xl ring-1 ring-slate-200 text-base font-black focus:ring-4 focus:ring-red-500/10 focus:bg-white transition-all outline-none" />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 uppercase">cm</span>
+                  <input type="number" id="width" value={formData.width} onChange={handleInputChange} disabled={isFixedPrice} className="w-full bg-slate-50 p-4 rounded-2xl ring-1 ring-slate-200 text-base font-black focus:ring-4 focus:ring-red-500/10 focus:bg-white transition-all outline-none" />
+                  {!isFixedPrice && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 uppercase">cm</span>}
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase ml-1 tracking-widest">Alto (cm)</label>
+              <div className={`space-y-2 ${isFixedPrice ? 'opacity-40 grayscale' : ''}`}>
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-1 tracking-widest">{isFixedPrice ? 'Alto (N/A)' : 'Alto (cm)'}</label>
                 <div className="relative">
-                  <input type="number" id="height" value={formData.height} onChange={handleInputChange} className="w-full bg-slate-50 p-4 rounded-2xl ring-1 ring-slate-200 text-base font-black focus:ring-4 focus:ring-red-500/10 focus:bg-white transition-all outline-none" />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 uppercase">cm</span>
+                  <input type="number" id="height" value={formData.height} onChange={handleInputChange} disabled={isFixedPrice} className="w-full bg-slate-50 p-4 rounded-2xl ring-1 ring-slate-200 text-base font-black focus:ring-4 focus:ring-red-500/10 focus:bg-white transition-all outline-none" />
+                  {!isFixedPrice && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 uppercase">cm</span>}
                 </div>
               </div>
             </motion.div>
@@ -358,24 +361,26 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
             </div>
 
             {/* BARRA DE RESULTADOS RAPIDOS (Solo Acrilico) */}
-            <div className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-2xl grid grid-cols-2 md:grid-cols-4 gap-6 shadow-2xl">
-                <div className="space-y-2">
-                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] flex items-center gap-2"><Box className="w-3 h-3"/> Materiales</p>
-                  <p className="text-2xl font-black text-white italic tracking-tighter">${Math.round(quote.materialCost).toLocaleString()}</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] flex items-center gap-2"><TrendingUp className="w-3 h-3"/> Utilidad</p>
-                  <p className="text-2xl font-black text-red-500 italic tracking-tighter">${Math.round(quote.costWithMargin - quote.totalBeforeMargin).toLocaleString()}</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] flex items-center gap-2"><ShieldCheck className="w-3 h-3"/> IVA ({Math.round(params.iva*100)}%)</p>
-                  <p className="text-2xl font-black text-slate-400 italic tracking-tighter">${Math.round(quote.ivaAmount).toLocaleString()}</p>
-                </div>
-                <div className="bg-white/10 rounded-2xl p-5 border border-white/20 shadow-inner flex flex-col justify-center">
-                  <p className="text-[10px] text-white font-black uppercase tracking-[0.3em] mb-1 opacity-60">Inversión Final</p>
-                  <p className="text-3xl font-black text-white italic tracking-tighter leading-none">${Math.round(quote.finalPrice).toLocaleString()}</p>
-                </div>
-            </div>
+            {!isFixedPrice && (
+              <div className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-2xl grid grid-cols-2 md:grid-cols-4 gap-6 shadow-2xl">
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] flex items-center gap-2"><Box className="w-3 h-3"/> Materiales</p>
+                    <p className="text-2xl font-black text-white italic tracking-tighter">${Math.round(quote.materialCost).toLocaleString()}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] flex items-center gap-2"><TrendingUp className="w-3 h-3"/> Utilidad</p>
+                    <p className="text-2xl font-black text-red-500 italic tracking-tighter">${Math.round(quote.costWithMargin - quote.totalBeforeMargin).toLocaleString()}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] flex items-center gap-2"><ShieldCheck className="w-3 h-3"/> IVA ({Math.round(params.iva*100)}%)</p>
+                    <p className="text-2xl font-black text-slate-400 italic tracking-tighter">${Math.round(quote.ivaAmount).toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white/10 rounded-2xl p-5 border border-white/20 shadow-inner flex flex-col justify-center">
+                    <p className="text-[10px] text-white font-black uppercase tracking-[0.3em] mb-1 opacity-60">Inversión Final</p>
+                    <p className="text-3xl font-black text-white italic tracking-tighter leading-none">${Math.round(quote.finalPrice).toLocaleString()}</p>
+                  </div>
+              </div>
+            )}
           </motion.section>
         ) : (
           <motion.section 
@@ -400,12 +405,18 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
 
               <div className="flex flex-col gap-4 text-slate-400 text-[11px] font-bold uppercase tracking-widest">
                 <div className="bg-white/5 px-6 py-3 rounded-2xl border border-white/5">
-                  <p>{quote.totalAreaM2.toFixed(3)} m² de Producción • x{formData.quantity} Unidades</p>
+                  {isFixedPrice ? (
+                    <p>Precio Unitario: ${Math.round((formData.customer_type === 'final' ? selectedProduct?.priceFinal : selectedProduct?.pricePublisher) || 0).toLocaleString()} • x{formData.quantity} Unidades</p>
+                  ) : (
+                    <p>{quote.totalAreaM2.toFixed(3)} m² de Producción • x{formData.quantity} Unidades</p>
+                  )}
                 </div>
-                <div className="flex items-center justify-center gap-6 pt-2">
-                  <span className="flex items-center gap-2 text-[10px]"><Box className="w-4 h-4 brand-text"/> IVA 19%</span>
-                  <span className="flex items-center gap-2 text-[10px]"><TrendingUp className="w-4 h-4 brand-text"/> Margen DPM</span>
-                </div>
+                {!isFixedPrice && (
+                  <div className="flex items-center justify-center gap-6 pt-2">
+                    <span className="flex items-center gap-2 text-[10px]"><Box className="w-4 h-4 brand-text"/> IVA 19%</span>
+                    <span className="flex items-center gap-2 text-[10px]"><TrendingUp className="w-4 h-4 brand-text"/> Margen DPM</span>
+                  </div>
+                )}
               </div>
             </div>
 

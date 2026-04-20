@@ -17,6 +17,44 @@ export const calculateQuote = (data: FormData, params: any, products: Product[])
 
   const productData = products.find(p => p.name === job_description);
   const designTimeMinutes = productData?.designTime || 0;
+
+  // Lógica para productos de PRECIO FIJO (No se multiplican por área ni márgenes)
+  if (productData?.isFixedPrice) {
+    const unitPrice = customer_type === 'final' ? productData.priceFinal : productData.pricePublisher;
+    const finalPriceTotal = unitPrice * quantity;
+    
+    return {
+      areaCm2: width * height,
+      totalAreaCm2: width * height * quantity,
+      totalAreaM2: (width * height * quantity) / 10000,
+      rollWidth: 0,
+      rollAreaCm2: 0,
+      wasteAreaCm2: 0,
+      materialCost: finalPriceTotal,
+      wasteCostFromRoll: 0,
+      productionCost: 0,
+      designCost: 0,
+      cuttingCost: 0,
+      laminateTotal: 0,
+      taponCost: 0,
+      tubeCost: 0,
+      ojalesCost: 0,
+      sticksCost: 0,
+      subtotalBeforeWaste: finalPriceTotal,
+      wasteCost: 0,
+      totalBeforeMargin: finalPriceTotal,
+      urgencyCost: 0,
+      totalCostsWithUrgency: finalPriceTotal,
+      costWithMargin: finalPriceTotal,
+      ivaAmount: 0,
+      finalPrice: finalPriceTotal,
+      installation: 0,
+      transport: 0,
+      adjustedWidth: width,
+      adjustedHeight: height,
+      detailedCosts: {}
+    };
+  }
   
   const isAcrilico = (job_description || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().includes('ACRILICO');
   const normalizedDesc = (job_description || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
