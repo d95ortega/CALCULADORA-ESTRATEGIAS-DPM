@@ -197,7 +197,9 @@ const App: React.FC = () => {
         const resetSettings = async () => {
           const path = 'company_data/dpm/settings/current';
           try {
-            // Force use the constants instead of current state which might be stale from Firestore sync
+            // First mark as pushed in local to prevent loop if write fails/takes long
+            localStorage.setItem('dpm_version_pushed_to_cloud', STORAGE_VERSION);
+            
             await setDoc(doc(db, path), { 
               brand: DEFAULT_BRAND, 
               params: DEFAULT_PARAMS, 
@@ -208,11 +210,14 @@ const App: React.FC = () => {
                 designTime: PRODUCT_DESIGN_TIMES[name] || 0
               }))
             });
-            localStorage.setItem('dpm_version_pushed_to_cloud', STORAGE_VERSION);
+            
             console.log("Factory defaults pushed to cloud successfully");
-            window.location.reload(); // Reload to ensure all states are fresh
+            window.location.reload(); // Final reload to ensure all states are fresh
           } catch (error) {
             console.error("Error pushing factory defaults:", error);
+            // If failed, we already set the version in local storage to prevent loop, 
+            // but we might want to try again later if it was a transient error.
+            // For now, let's keep it simple to fix the "cannot enter" issue.
           }
         };
         resetSettings();
@@ -237,6 +242,13 @@ const App: React.FC = () => {
 
     const checkAuth = async () => {
       const isOwner = user.email === OWNER_EMAIL;
+      
+      // Proactive set for owner to minimize perceived delay
+      if (isOwner) {
+        setIsAuthorized(true);
+        setIsAdmin(true);
+      }
+
       const authDocRef = doc(db, 'authorized_users', user.email || '');
       
       try {
@@ -964,6 +976,14 @@ const App: React.FC = () => {
             <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full brand-bg" /> Las reglas de seguridad están desplegadas.</li>
           </ul>
           <div className="pt-4 flex flex-col gap-3">
+             {user?.email === OWNER_EMAIL && (
+               <button 
+                onClick={() => setIsAuthorized(true)} 
+                className="w-full bg-green-500 text-white py-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all"
+               >
+                 Omitir Verificación (Dueño)
+               </button>
+             )}
              <button onClick={() => window.location.reload()} className="w-full brand-bg text-white py-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Reintentar</button>
              <button onClick={logout} className="w-full bg-slate-100 text-slate-400 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest">Cerrar Sesión</button>
           </div>
@@ -979,9 +999,9 @@ const App: React.FC = () => {
       {/* SIDEBAR PERSISTENTE */}
       <aside className={`bg-slate-900 text-white transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-20' : 'w-72'} h-screen z-[100] shrink-0 border-r border-slate-800`}>
         <div className="p-6 flex items-center gap-4 border-b border-slate-800/50">
-          <div className="brand-bg p-2 rounded-xl shadow-lg shadow-red-500/20 overflow-hidden flex items-center justify-center w-10 h-10 shrink-0">
+          <div className={`${brand.logo ? 'bg-white' : 'brand-bg p-2'} rounded-xl shadow-lg shadow-black/20 overflow-hidden flex items-center justify-center w-10 h-10 shrink-0`}>
             {brand.logo ? (
-              <img src={brand.logo} alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+              <img src={brand.logo} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             ) : (
               <Smartphone className="text-white w-6 h-6" />
             )}

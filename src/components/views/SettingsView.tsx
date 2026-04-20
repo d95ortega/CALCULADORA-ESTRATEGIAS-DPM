@@ -239,8 +239,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           {activeSettingsTab === 'brand' && (
             <div className="space-y-6">
               <div className="bg-slate-100 p-8 rounded-3xl border-2 border-dashed border-slate-200 text-center space-y-4">
-                <div className="mx-auto w-24 h-24 bg-white rounded-3xl shadow-xl flex items-center justify-center overflow-hidden border">
-                  {brand.logo ? <img src={brand.logo} alt="Logo preview" className="w-full h-full object-contain" referrerPolicy="no-referrer" /> : <Smartphone className="w-10 h-10 text-slate-200" />}
+                <div className={`${brand.logo ? 'bg-white' : 'bg-white'} mx-auto w-24 h-24 rounded-3xl shadow-xl flex items-center justify-center overflow-hidden border border-slate-200 p-0`}>
+                  {brand.logo ? <img src={brand.logo} alt="Logo preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : <Smartphone className="w-10 h-10 text-slate-200" />}
                 </div>
                 <div>
                   <input type="file" ref={fileInputRef} onChange={saveLogoLocal} accept="image/*" className="hidden" />
