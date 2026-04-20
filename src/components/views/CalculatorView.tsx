@@ -185,6 +185,24 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
             </motion.div>
           )}
 
+          <div className="bg-red-50 p-6 rounded-[2rem] border border-red-100 space-y-4">
+            <h4 className="text-[10px] font-black text-red-600 uppercase tracking-[0.3em] flex items-center gap-2">
+              <DollarSign className="w-3 h-3" /> Precio Manual (Opcional)
+            </h4>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500 font-black">$</span>
+              <input 
+                type="number" 
+                id="overridePrice" 
+                value={formData.overridePrice || ''} 
+                onChange={handleInputChange} 
+                placeholder="Sobrescribir precio calculado..."
+                className="w-full bg-white p-4 pl-8 rounded-2xl ring-1 ring-red-200 text-sm font-black focus:ring-4 focus:ring-red-500/10 outline-none transition-all placeholder:text-red-300" 
+              />
+            </div>
+            <p className="text-[8px] text-red-400 font-bold uppercase tracking-widest px-1">Si ingresas un valor aquí, se ignorará el cálculo automático.</p>
+          </div>
+
           <div className="pt-6">
             <button 
               onClick={handleSaveJob} 
@@ -550,9 +568,20 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
                     key={idx} 
                     className="bg-slate-50 p-3 rounded-xl flex justify-between items-center border border-slate-100 group hover:border-red-200 transition-all"
                   >
-                    <div className="truncate pr-3 space-y-0.5">
+                    <div className="truncate pr-3 space-y-0.5 flex-1">
                       <span className="text-[10px] font-black uppercase truncate block text-slate-700">{job.job_description}</span>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase italic tracking-tighter">${Math.round(job.finalPrice).toLocaleString()}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-bold text-slate-400">$</span>
+                        <input 
+                          type="number" 
+                          value={Math.round(job.finalPrice)} 
+                          onChange={(e) => {
+                            const newPrice = parseFloat(e.target.value) || 0;
+                            setQuoteJobs(prev => prev.map((j, i) => i === idx ? { ...j, finalPrice: newPrice } : j));
+                          }}
+                          className="w-20 bg-white/50 border border-transparent hover:border-slate-200 focus:border-red-500 focus:bg-white rounded px-1 py-0.5 text-[9px] font-bold text-slate-500 outline-none transition-all"
+                        />
+                      </div>
                     </div>
                     <button onClick={() => setQuoteJobs(prev => prev.filter((_, i) => i !== idx))} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90"><X className="w-4 h-4"/></button>
                   </motion.div>

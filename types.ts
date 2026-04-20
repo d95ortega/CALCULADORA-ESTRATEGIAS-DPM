@@ -72,6 +72,7 @@ export interface FormData {
   fondo_w?: number;
   fondo_h?: number;
   include_power_supply?: boolean;
+  overridePrice?: number;
 }
 
 export interface QuoteResult {

@@ -26,6 +26,7 @@ interface SettingsViewProps {
   saveLogoLocal: (e: React.ChangeEvent<HTMLInputElement>) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
   isAdmin: boolean;
+  onSaveGlobalSettings: () => Promise<void>;
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({
@@ -35,10 +36,26 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   brand, setBrand,
   authorizedUsers, newUser, setNewUser, 
   handleAddAuthorizedUser, handleDeleteAuthorizedUser,
-  resetAllData, saveLogoLocal, fileInputRef, isAdmin
+  resetAllData, saveLogoLocal, fileInputRef, isAdmin,
+  onSaveGlobalSettings
 }) => {
   const [testStatus, setTestStatus] = React.useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [testMessage, setTestMessage] = React.useState('');
+  const [isSavingLocal, setIsSavingLocal] = React.useState(false);
+  const [saveLocalSuccess, setSaveLocalSuccess] = React.useState(false);
+
+  const handleGlobalSave = async () => {
+    setIsSavingLocal(true);
+    try {
+      await onSaveGlobalSettings();
+      setSaveLocalSuccess(true);
+      setTimeout(() => setSaveLocalSuccess(false), 3000);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSavingLocal(false);
+    }
+  };
 
   const runDiagnostic = async () => {
     setTestStatus('testing');
@@ -82,6 +99,22 @@ const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
         
         <div className="p-8">
+          {isAdmin && (
+            <div className="mb-8 p-4 bg-red-50 rounded-2xl border border-red-100 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase text-red-900 tracking-tight">Cambios Pendientes</p>
+                <p className="text-[8px] text-red-700 font-bold uppercase mt-0.5">Guarda para que todos los usuarios vean los cambios</p>
+              </div>
+              <button 
+                onClick={handleGlobalSave} 
+                disabled={isSavingLocal}
+                className="px-6 py-3 brand-bg text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-red-500/20 active:scale-95 transition-all flex items-center gap-2"
+              >
+                {isSavingLocal ? 'Guardando...' : saveLocalSuccess ? '¡Guardado!' : 'Guardar Globalmente'}
+              </button>
+            </div>
+          )}
+
           {activeSettingsTab === 'products' && (
             <div className="space-y-6">
               <div className="bg-slate-900 p-6 rounded-3xl space-y-4">

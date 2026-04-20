@@ -118,7 +118,8 @@ const App: React.FC = () => {
     selected_acrylic_material_id: '',
     manual_structure_cost: 0,
     calado_w: 0, calado_h: 0, letras3d_w: 0, letras3d_h: 0, letras3d_grosor: 0, vinilo_w: 0, vinilo_h: 0, lona_w: 0, lona_h: 0, led_cm: 0, fondo_w: 0, fondo_h: 0,
-    include_power_supply: false
+    include_power_supply: false,
+    overridePrice: 0
   });
   const [savedJobs, setSavedJobs] = useState<SavedJob[]>([]);
   const [quoteJobs, setQuoteJobs] = useState<SavedJob[]>([]);
@@ -392,6 +393,8 @@ const App: React.FC = () => {
     if (!formData.job_description) return;
     const newJob: SavedJob = { ...formData, id: Math.random().toString(36).substr(2, 9), finalPrice: quote.finalPrice, createdAt: new Date().toLocaleString(), quoteResult: quote };
     setSavedJobs(prev => [newJob, ...prev]);
+    // Optionally reset overridePrice after saving
+    setFormData(prev => ({ ...prev, overridePrice: 0 }));
   };
 
   const saveCustomer = async (data: Omit<Customer, 'id'>) => {
@@ -1206,30 +1209,31 @@ const App: React.FC = () => {
               />
             )}
 
-            {activeView === 'settings' && (
-              <SettingsView 
-                activeSettingsTab={activeSettingsTab}
-                setActiveSettingsTab={setActiveSettingsTab}
-                newProduct={newProduct}
-                setNewProduct={setNewProduct}
-                products={products}
-                setProducts={setProducts}
-                params={params}
-                setParams={setParams}
-                handleProductUpdate={handleProductUpdate}
-                brand={brand}
-                setBrand={setBrand}
-                authorizedUsers={authorizedUsers}
-                newUser={newUser}
-                setNewUser={setNewUser}
-                handleAddAuthorizedUser={handleAddAuthorizedUser}
-                handleDeleteAuthorizedUser={handleDeleteAuthorizedUser}
-                resetAllData={resetAllData}
-                saveLogoLocal={saveLogoLocal}
-                fileInputRef={fileInputRef}
-                isAdmin={isAdmin}
-              />
-            )}
+          {activeView === 'settings' && (
+            <SettingsView 
+              activeSettingsTab={activeSettingsTab}
+              setActiveSettingsTab={setActiveSettingsTab}
+              newProduct={newProduct}
+              setNewProduct={setNewProduct}
+              products={products}
+              setProducts={setProducts}
+              params={params}
+              setParams={setParams}
+              handleProductUpdate={handleProductUpdate}
+              brand={brand}
+              setBrand={setBrand}
+              authorizedUsers={authorizedUsers}
+              newUser={newUser}
+              setNewUser={setNewUser}
+              handleAddAuthorizedUser={() => handleAddAuthorizedUser(newUser.email)}
+              handleDeleteAuthorizedUser={(id, email) => handleDeleteAuthorizedUser(email)}
+              resetAllData={() => { localStorage.clear(); window.location.reload(); }}
+              saveLogoLocal={saveLogoLocal}
+              fileInputRef={fileInputRef}
+              isAdmin={isAdmin}
+              onSaveGlobalSettings={saveSharedSettings}
+            />
+          )}
           </Suspense>
         </div>
       </div>

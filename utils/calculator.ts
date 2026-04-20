@@ -125,7 +125,7 @@ export const calculateQuote = (data: FormData, params: any, products: Product[])
   const totalAreaCm2 = effectiveAreaCm2Unitary * quantity;
   const totalAreaM2 = totalAreaCm2 / 10000;
 
-  return {
+  const result: QuoteResult = {
     areaCm2: effectiveAreaCm2Unitary, 
     totalAreaCm2: totalAreaCm2, 
     totalAreaM2: totalAreaM2, 
@@ -167,4 +167,11 @@ export const calculateQuote = (data: FormData, params: any, products: Product[])
       fuente: costFuente * quantity
     }
   };
+
+  // Manual price override logic
+  if (data.overridePrice && data.overridePrice > 0) {
+    result.finalPrice = data.overridePrice;
+  }
+
+  return result;
 };
