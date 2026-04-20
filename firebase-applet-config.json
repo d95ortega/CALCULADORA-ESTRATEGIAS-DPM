@@ -1,10 +1,10 @@
 {
-  "projectId": "gen-lang-client-0568898222",
-  "appId": "1:96729762342:web:ae015faa1716069c1434e7",
-  "apiKey": "AIzaSyDDyoP-Jjp2iAI2z_Jicb2tAFP4sT4n2HI",
-  "authDomain": "gen-lang-client-0568898222.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-0c484691-0334-4b48-bdaa-b5763337a8b1",
-  "storageBucket": "gen-lang-client-0568898222.firebasestorage.app",
-  "messagingSenderId": "96729762342",
-  "measurementId": ""
+  "apiKey": "AIzaSyA17m-rsd02fFXBfqjkcvbVudEx9cU2Jt0",
+  "authDomain": "calculadora-precio-talonarios.firebaseapp.com",
+  "projectId": "calculadora-precio-talonarios",
+  "storageBucket": "calculadora-precio-talonarios.firebasestorage.app",
+  "messagingSenderId": "502783855639",
+  "appId": "1:502783855639:web:578b6d9a5cff1dffdfe052",
+  "measurementId": "G-6ZP137C26N",
+  "firestoreDatabaseId": "(default)"
 }
