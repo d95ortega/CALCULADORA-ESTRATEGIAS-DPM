@@ -538,14 +538,23 @@ const App: React.FC = () => {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (error: any) {
-      console.error("Login error", error);
-      if (error.code === 'auth/popup-blocked') {
+      console.error("Login error detail:", error);
+      const errorCode = error.code || "";
+      const errorMessage = error.message || "";
+      const isUnauthorizedDomain = 
+        errorCode === 'auth/unauthorized-domain' || 
+        errorMessage.toLowerCase().includes('unauthorized-domain') ||
+        errorMessage.toLowerCase().includes('unauthorized domain');
+
+      if (errorCode === 'auth/popup-blocked') {
         setLoginError("El navegador bloqueó la ventana emergente. Por favor, permite las ventanas emergentes.");
-      } else if (error.code === 'auth/unauthorized-domain' || error.message?.toLowerCase().includes('unauthorized-domain')) {
+      } else if (isUnauthorizedDomain) {
         const domain = window.location.hostname;
-        setLoginError(`ERROR DE DOMINIO: El sitio "${domain}" no está autorizado en tu consola Firebase. Por favor, asegúrate de haberlo guardado correctamente en la lista blanca.`);
+        setLoginError(
+          `DOMINIO NO AUTORIZADO: Para solucionar esto, ve a tu Consola de Firebase > Authentication > Settings > Authorized Domains y agrega "${domain}". Sin esto, no podrás iniciar sesión desde este link.`
+        );
       } else {
-        setLoginError(`Error (${error.code || 'unknown'}): ` + (error.message || "Inténtalo de nuevo"));
+        setLoginError(`Error de Inicio (${errorCode}): ` + errorMessage);
       }
     }
   };
