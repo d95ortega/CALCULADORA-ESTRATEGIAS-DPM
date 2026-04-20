@@ -541,11 +541,11 @@ const App: React.FC = () => {
       console.error("Login error", error);
       if (error.code === 'auth/popup-blocked') {
         setLoginError("El navegador bloqueó la ventana emergente. Por favor, permite las ventanas emergentes.");
-      } else if (error.code === 'auth/unauthorized-domain') {
+      } else if (error.code === 'auth/unauthorized-domain' || error.message?.toLowerCase().includes('unauthorized-domain')) {
         const domain = window.location.hostname;
-        setLoginError(`El dominio "${domain}" no está autorizado en Firebase. Agrégalo en la consola de Firebase.`);
+        setLoginError(`ERROR DE DOMINIO: El sitio "${domain}" no está autorizado en tu consola Firebase. Por favor, asegúrate de haberlo guardado correctamente en la lista blanca.`);
       } else {
-        setLoginError("Error al iniciar sesión: " + (error.message || "Inténtalo de nuevo"));
+        setLoginError(`Error (${error.code || 'unknown'}): ` + (error.message || "Inténtalo de nuevo"));
       }
     }
   };
