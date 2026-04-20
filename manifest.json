@@ -1,11 +1,18 @@
 
 {
+  "short_name": "DPM Calc",
   "name": "Estrategias DPM - Calculadora Profesional",
-  "short_name": "DPM Costos",
   "description": "Calculadora de costos y generador de PDF para Estrategias DPM.",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
   "theme_color": "#ec3237",
-  "icons": []
+  "background_color": "#0f172a",
+  "orientation": "portrait"
 }
