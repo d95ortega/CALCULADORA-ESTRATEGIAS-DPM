@@ -1,9 +1,8 @@
-
 const CACHE_NAME = 'dpm-calc-v1';
 const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json'
+  '/CALCULADORA-ESTRATEGIAS-DPM/',
+  '/CALCULADORA-ESTRATEGIAS-DPM/index.html',
+  '/CALCULADORA-ESTRATEGIAS-DPM/manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
