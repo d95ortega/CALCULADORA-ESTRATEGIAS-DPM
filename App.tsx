@@ -10,7 +10,7 @@ import {
   PlusCircle, MessageSquare, UserCheck, Palette, Building2, UploadCloud, Smartphone, HelpCircle, User as UserIcon,
   DollarSign, Percent, Clock, Box, MapPin, Mail, Phone, Fingerprint, Users, Search, Ruler, Disc, Droplets, Zap, Wrench, Scissors, Layout, RefreshCcw, PieChart, Activity,
   Maximize2, Type as FontIcon, MoveHorizontal, ChevronRight, Tags, Power, TrendingUp, ShieldCheck, PenTool, Hash, LogIn, LogOut, Package, Printer, Warehouse, Store, Truck, ClipboardList,
-  Archive, FileCheck, FileEdit, Sliders
+  Archive, FileCheck, FileEdit, Sliders, Tag
 } from 'lucide-react';
 // import { jsPDF } from 'jspdf';
 // import html2canvas from 'html2canvas';
@@ -136,7 +136,7 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('dpm_orders');
     return saved ? JSON.parse(saved) : [];
   });
-  const [activeSettingsTab, setActiveSettingsTab] = useState<'products' | 'costs' | 'params' | 'brand' | 'users'>('products');
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'products' | 'costs' | 'params' | 'brand' | 'users' | 'backup'>('products');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [initialStatus, setInitialStatus] = useState<QuoteStatus>('PENDIENTE');
   const [user, setUser] = useState<User | null>(null);
@@ -148,7 +148,9 @@ const App: React.FC = () => {
     items: SavedJob[];
     quoteId: string;
     isOrder: boolean;
+    isLabel?: boolean;
     date?: string;
+    deliveryPhotos?: string[];
   } | null>(null);
 
   useEffect(() => {
@@ -607,7 +609,8 @@ const App: React.FC = () => {
       total: quote.total,
       status: 'NUEVA',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      deliveryPhotos: quote.deliveryPhotos || []
     };
 
     if (user && isAuthorized) {
@@ -723,7 +726,11 @@ const App: React.FC = () => {
     }
   };
 
-  const generatePdf = async (customConfig?: { customer: Customer; items: SavedJob[]; quoteId: string; isOrder: boolean }) => {
+    isOrder: boolean; 
+    isLabel?: boolean;
+    date?: string;
+    deliveryPhotos?: string[];
+  }) => {
     const targetItems = customConfig ? customConfig.items : quoteJobs;
     const targetCustomer = customConfig ? customConfig.customer : customerInfo;
     const targetId = customConfig ? customConfig.quoteId : 'NUEVA';
@@ -739,7 +746,9 @@ const App: React.FC = () => {
       items: quoteJobs, 
       quoteId: 'PROPUESTA', 
       isOrder: false,
-      date: new Date().toISOString()
+      isLabel: false,
+      date: new Date().toISOString(),
+      deliveryPhotos: []
     });
 
     setIsGeneratingPdf(true);
@@ -776,16 +785,18 @@ const App: React.FC = () => {
         scale: 1.5, // Slightly lower scale for better performance and stability
         useCORS: true, 
         backgroundColor: '#ffffff',
-        logging: true, // Enable logging to see potential issues in dev console
+        logging: true,
         allowTaint: true,
         scrollX: 0,
         scrollY: 0,
-        windowWidth: 800, // Force a specific width for rendering consistency
+        windowWidth: customConfig?.isLabel ? 400 : 800,
         windowHeight: element.scrollHeight || 1123
       });
       
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'px', 'a4');
+      const pdf = customConfig?.isLabel 
+        ? new jsPDF('p', 'px', [400, 400]) 
+        : new jsPDF('p', 'px', 'a4');
       
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
@@ -800,21 +811,69 @@ const App: React.FC = () => {
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
       heightLeft -= pageHeight;
 
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-        heightLeft -= pageHeight;
+      if (!customConfig?.isLabel) {
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+          heightLeft -= pageHeight;
+        }
       }
 
-      pdf.save(`${customConfig?.isOrder ? 'Orden' : 'Cotizacion'}_${targetCustomer.name || 'Cliente'}_${targetId}.pdf`);
+      const fileName = customConfig?.isLabel 
+        ? `Etiqueta_${targetId}.pdf`
+        : `${customConfig?.isOrder ? 'Orden' : 'Cotizacion'}_${targetCustomer.name || 'Cliente'}_${targetId}.pdf`;
+        
+      pdf.save(fileName);
     } catch (e: any) { 
       console.error("Error al crear PDF:", e);
       alert(`Error al crear PDF: ${e.message || "Por favor intenta de nuevo."}`); 
     } finally { 
       setIsGeneratingPdf(false); 
-      // Optionally clear config after a delay to revert template if needed, 
-      // but leaving it is fine since it's hidden.
+    }
+  };
+
+  const addOrderPhoto = async (orderId: string, base64: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    const photos = [...(order.deliveryPhotos || []), base64];
+    if (user && isAuthorized) {
+      await updateDoc(doc(db, 'company_data/dpm/orders', orderId), { deliveryPhotos: photos, updatedAt: new Date().toISOString() });
+    } else {
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, deliveryPhotos: photos, updatedAt: new Date().toISOString() } : o));
+    }
+  };
+
+  const removeOrderPhoto = async (orderId: string, index: number) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    const photos = (order.deliveryPhotos || []).filter((_, i) => i !== index);
+    if (user && isAuthorized) {
+      await updateDoc(doc(db, 'company_data/dpm/orders', orderId), { deliveryPhotos: photos, updatedAt: new Date().toISOString() });
+    } else {
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, deliveryPhotos: photos, updatedAt: new Date().toISOString() } : o));
+    }
+  };
+
+  const addQuotePhoto = async (quoteId: string, base64: string) => {
+    const quote = history.find(q => q.id === quoteId);
+    if (!quote) return;
+    const photos = [...(quote.deliveryPhotos || []), base64];
+    if (user && isAuthorized) {
+      await updateDoc(doc(db, 'company_data/dpm/quotes', quoteId), { deliveryPhotos: photos });
+    } else {
+      setHistory(prev => prev.map(q => q.id === quoteId ? { ...q, deliveryPhotos: photos } : q));
+    }
+  };
+
+  const removeQuotePhoto = async (quoteId: string, index: number) => {
+    const quote = history.find(q => q.id === quoteId);
+    if (!quote) return;
+    const photos = (quote.deliveryPhotos || []).filter((_, i) => i !== index);
+    if (user && isAuthorized) {
+      await updateDoc(doc(db, 'company_data/dpm/quotes', quoteId), { deliveryPhotos: photos });
+    } else {
+      setHistory(prev => prev.map(q => q.id === quoteId ? { ...q, deliveryPhotos: photos } : q));
     }
   };
 
@@ -900,6 +959,45 @@ const App: React.FC = () => {
       window.location.reload();
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, path);
+    }
+  };
+
+  const exportData = async () => {
+    try {
+      const data: any = {
+        exportDate: new Date().toISOString(),
+        brand,
+        params,
+        products,
+        customers: [] as any[],
+        quotes: [] as any[],
+        orders: [] as any[],
+      };
+
+      if (user) {
+        // Fetch current snapshot of data from Firestore
+        const custSnap = await getDocs(query(collection(db, 'company_data', 'dpm', 'customers')));
+        data.customers = custSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const quoteSnap = await getDocs(query(collection(db, 'company_data', 'dpm', 'quotes')));
+        data.quotes = quoteSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const orderSnap = await getDocs(query(collection(db, 'company_data', 'dpm', 'orders')));
+        data.orders = orderSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      }
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Copia_Seguridad_DPM_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export error:", error);
+      alert("Error al exportar los datos. Por favor, intenta de nuevo.");
     }
   };
 
@@ -1203,6 +1301,8 @@ const App: React.FC = () => {
                 sendWhatsAppFromHistory={sendWhatsAppFromHistory}
                 loadQuoteToCalculator={loadQuoteToCalculator}
                 generatePdf={generatePdf}
+                onAddPhoto={addQuotePhoto}
+                onRemovePhoto={removeQuotePhoto}
               />
             )}
 
@@ -1212,7 +1312,12 @@ const App: React.FC = () => {
                 updateOrderStatus={updateOrderStatus}
                 deleteOrder={deleteOrder}
                 isAdmin={isAdmin}
-                generatePdf={generatePdf}
+                generatePdf={(config) => generatePdf({ 
+                  ...config, 
+                  deliveryPhotos: orders.find(o => o.id === config?.quoteId)?.deliveryPhotos || [] 
+                })}
+                onAddPhoto={addOrderPhoto}
+                onRemovePhoto={removeOrderPhoto}
               />
             )}
 
@@ -1248,6 +1353,7 @@ const App: React.FC = () => {
               fileInputRef={fileInputRef}
               isAdmin={isAdmin}
               onSaveGlobalSettings={saveSharedSettings}
+              onExportData={exportData}
             />
           )}
           </Suspense>

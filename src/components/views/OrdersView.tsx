@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Package, Search, Clock, Trash2, ChevronRight, User, Phone, FileText 
+  Package, Search, Clock, Trash2, ChevronRight, User, Phone, FileText, Camera, Image as ImageIcon, X, Tag 
 } from 'lucide-react';
 import { Order, OrderStatus } from '@/types';
 
@@ -9,10 +9,26 @@ interface OrdersViewProps {
   updateOrderStatus: (id: string, status: OrderStatus) => void;
   deleteOrder: (id: string) => void;
   isAdmin: boolean;
-  generatePdf: (customConfig?: { customer: any; items: any[]; quoteId: string; isOrder: boolean; date?: string }) => Promise<void>;
+  generatePdf: (customConfig?: { customer: any; items: any[]; quoteId: string; isOrder: boolean; isLabel?: boolean; date?: string }) => Promise<void>;
+  onAddPhoto: (orderId: string, base64: string) => void;
+  onRemovePhoto: (orderId: string, index: number) => void;
 }
 
-const OrdersView: React.FC<OrdersViewProps> = ({ orders, updateOrderStatus, deleteOrder, isAdmin, generatePdf }) => {
+const OrdersView: React.FC<OrdersViewProps> = ({ 
+  orders, updateOrderStatus, deleteOrder, isAdmin, generatePdf,
+  onAddPhoto, onRemovePhoto
+}) => {
+  const handlePhotoUpload = (orderId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onAddPhoto(orderId, reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 pb-20">
       <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
@@ -70,6 +86,27 @@ const OrdersView: React.FC<OrdersViewProps> = ({ orders, updateOrderStatus, dele
                         >
                           <FileText className="w-3.5 h-3.5" />
                         </button>
+                        <button 
+                          onClick={() => generatePdf({ 
+                            customer: { 
+                              id: '', 
+                              name: order.customerName, 
+                              phone: order.customerPhone, 
+                              email: order.customerEmail || '', 
+                              address: order.customerAddress || '', 
+                              taxId: '' 
+                            }, 
+                            items: order.items, 
+                            quoteId: order.id,
+                            isOrder: true,
+                            isLabel: true,
+                            date: order.createdAt
+                          })}
+                          className="text-slate-300 hover:text-amber-500 transition-colors"
+                          title="Imprimir Etiqueta para Taller"
+                        >
+                          <Tag className="w-3.5 h-3.5" />
+                        </button>
                         <button onClick={() => deleteOrder(order.id)} className="text-slate-300 hover:text-red-500 transition-colors">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -105,6 +142,47 @@ const OrdersView: React.FC<OrdersViewProps> = ({ orders, updateOrderStatus, dele
                           <p className="text-[10px] font-bold text-slate-500 uppercase">{order.customerPhone}</p>
                         </div>
                       )}
+
+                      {/* Photo Section */}
+                      <div className="pt-2 border-t border-slate-50 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Evidencias ({order.deliveryPhotos?.length || 0})</span>
+                          <label className="cursor-pointer group/upload">
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              onChange={(e) => handlePhotoUpload(order.id, e)}
+                            />
+                            <div className="flex items-center gap-1 text-slate-400 group-hover/upload:brand-text transition-colors">
+                              <Camera className="w-3 h-3" />
+                              <span className="text-[8px] font-black uppercase">Añadir</span>
+                            </div>
+                          </label>
+                        </div>
+
+                        {order.deliveryPhotos && order.deliveryPhotos.length > 0 && (
+                          <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+                            {order.deliveryPhotos.map((photo, idx) => (
+                              <div key={idx} className="relative shrink-0 w-12 h-12 rounded-lg bg-slate-100 overflow-hidden border border-slate-100 group/photo shadow-sm">
+                                <img 
+                                  src={photo} 
+                                  alt={`Delivery ${idx}`} 
+                                  className="w-full h-full object-cover cursor-pointer"
+                                  onClick={() => window.open(photo, '_blank')}
+                                  referrerPolicy="no-referrer"
+                                />
+                                <button 
+                                  onClick={() => onRemovePhoto(order.id, idx)}
+                                  className="absolute top-0.5 right-0.5 bg-red-500/80 text-white rounded-full p-0.5 opacity-0 group-hover/photo:opacity-100 transition-opacity"
+                                >
+                                  <X className="w-2 h-2" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div className="mt-4 pt-4 border-t flex items-center justify-between">

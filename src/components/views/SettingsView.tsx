@@ -1,13 +1,13 @@
 import React from 'react';
 import { 
   Package, DollarSign, Sliders, Smartphone, ShieldCheck, 
-  PlusCircle, Trash2, Info, HelpCircle
+  PlusCircle, Trash2, Info, HelpCircle, Download
 } from 'lucide-react';
 import { Product, User } from '@/types';
 
 interface SettingsViewProps {
-  activeSettingsTab: 'products' | 'costs' | 'params' | 'brand' | 'users';
-  setActiveSettingsTab: (tab: 'products' | 'costs' | 'params' | 'brand' | 'users') => void;
+  activeSettingsTab: 'products' | 'costs' | 'params' | 'brand' | 'users' | 'backup';
+  setActiveSettingsTab: (tab: 'products' | 'costs' | 'params' | 'brand' | 'users' | 'backup') => void;
   newProduct: Product;
   setNewProduct: React.Dispatch<React.SetStateAction<Product>>;
   products: Product[];
@@ -27,6 +27,7 @@ interface SettingsViewProps {
   fileInputRef: React.RefObject<HTMLInputElement>;
   isAdmin: boolean;
   onSaveGlobalSettings: () => Promise<void>;
+  onExportData: () => Promise<void>;
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({
@@ -37,7 +38,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   authorizedUsers, newUser, setNewUser, 
   handleAddAuthorizedUser, handleDeleteAuthorizedUser,
   resetAllData, saveLogoLocal, fileInputRef, isAdmin,
-  onSaveGlobalSettings
+  onSaveGlobalSettings, onExportData
 }) => {
   const [testStatus, setTestStatus] = React.useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [testMessage, setTestMessage] = React.useState('');
@@ -81,7 +82,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({
             { id: 'costs', label: 'Costos', icon: DollarSign },
             { id: 'params', label: 'Parámetros', icon: Sliders },
             { id: 'brand', label: 'Marca', icon: Smartphone },
-            { id: 'users', label: 'Usuarios', icon: ShieldCheck }
+            { id: 'users', label: 'Usuarios', icon: ShieldCheck },
+            { id: 'backup', label: 'Seguridad', icon: Download }
           ].map(tab => (
             <button
               key={tab.id}
@@ -387,6 +389,59 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     </button>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {activeSettingsTab === 'backup' && (
+            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+              <div className="bg-slate-900 p-8 rounded-[2rem] text-center space-y-6">
+                <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto">
+                  <ShieldCheck className="w-10 h-10 brand-text" />
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-[14px] font-black text-white uppercase tracking-[0.2em]">Copia de Seguridad</h4>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase leading-relaxed max-w-sm mx-auto">
+                    Tus datos se guardan automáticamente en la nube de Google Firebase, pero puedes descargar una copia local por seguridad extra.
+                  </p>
+                </div>
+                
+                <div className="pt-4">
+                  <button 
+                    onClick={onExportData}
+                    className="group relative inline-flex items-center justify-center px-8 py-4 font-black text-[10px] uppercase tracking-[0.2em] text-white transition-all duration-200 bg-red-600 rounded-2xl hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600 shadow-xl shadow-red-600/20 active:scale-95"
+                  >
+                    <Download className="w-4 h-4 mr-3 group-hover:animate-bounce" />
+                    Descargar Respaldo Total
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 space-y-3">
+                  <div className="flex items-center gap-2 text-blue-600">
+                    <Info className="w-4 h-4" />
+                    <span className="text-[10px] font-black uppercase">¿Qué incluye?</span>
+                  </div>
+                  <ul className="space-y-2">
+                    {['Lista de Clientes', 'Historial de Cotizaciones', 'Tablero de Pedidos', 'Precios de Productos', 'Configuración de Marca'].map((item, i) => (
+                      <li key={i} className="flex items-center gap-2 text-[9px] font-bold text-blue-800 uppercase">
+                        <div className="w-1 h-1 bg-blue-400 rounded-full" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-3">
+                   <div className="flex items-center gap-2 text-slate-600">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span className="text-[10px] font-black uppercase">Nube Automática</span>
+                  </div>
+                  <p className="text-[9px] text-slate-500 font-bold leading-relaxed uppercase">
+                    No es obligatorio descargar copias. Firebase mantiene tus datos sincronizados y seguros 24/7. Esta función es para tu control personal.
+                  </p>
+                </div>
               </div>
             </div>
           )}
