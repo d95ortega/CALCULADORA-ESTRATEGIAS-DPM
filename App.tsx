@@ -17,7 +17,8 @@ import {
 import { 
   auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged, 
   collection, query, where, onSnapshot, doc, setDoc, addDoc, updateDoc, deleteDoc, 
-  handleFirestoreError, OperationType, User, getDocFromServer 
+  handleFirestoreError, OperationType, User, getDocFromServer, getDocs,
+  limit, orderBy 
 } from './firebase';
 
 // Firebase integration
@@ -128,14 +129,8 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('dpm_customers');
     return saved ? JSON.parse(saved) : [];
   });
-  const [history, setHistory] = useState<QuoteHistoryEntry[]>(() => {
-    const saved = localStorage.getItem('dpm_history');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [orders, setOrders] = useState<Order[]>(() => {
-    const saved = localStorage.getItem('dpm_orders');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [history, setHistory] = useState<QuoteHistoryEntry[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [activeSettingsTab, setActiveSettingsTab] = useState<'products' | 'costs' | 'params' | 'brand' | 'users' | 'backup'>('products');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [initialStatus, setInitialStatus] = useState<QuoteStatus>('PENDIENTE');
@@ -246,7 +241,6 @@ const App: React.FC = () => {
     const checkAuth = async () => {
       const isOwner = user.email === OWNER_EMAIL;
       
-      // Proactive set for owner to minimize perceived delay
       if (isOwner) {
         setIsAuthorized(true);
         setIsAdmin(true);
@@ -266,7 +260,6 @@ const App: React.FC = () => {
         }
       } catch (error) {
         console.error("Auth check error:", error);
-        // Fallback for owner if Firestore is blocked or rules are not deployed
         setIsAuthorized(isOwner);
         setIsAdmin(isOwner);
       }
@@ -320,28 +313,36 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, [user, isAuthorized]);
 
-  // Sync Shared History
+  // Optimized fetch: Limit to recent 100 quotes
   useEffect(() => {
     if (!user || !isAuthorized) return;
     const path = 'company_data/dpm/quotes';
-    const q = query(collection(db, path));
+    const q = query(
+      collection(db, path), 
+      orderBy('date', 'desc'),
+      limit(100)
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as QuoteHistoryEntry));
-      setHistory(data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      setHistory(data);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, path);
     });
     return () => unsubscribe();
   }, [user, isAuthorized]);
 
-  // Sync Shared Orders
+  // Optimized fetch: Limit to recent 100 orders
   useEffect(() => {
     if (!user || !isAuthorized) return;
     const path = 'company_data/dpm/orders';
-    const q = query(collection(db, path));
+    const q = query(
+      collection(db, path), 
+      orderBy('updatedAt', 'desc'),
+      limit(100)
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
-      setOrders(data.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+      setOrders(data);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, path);
     });
@@ -363,10 +364,8 @@ const App: React.FC = () => {
     localStorage.setItem('dpm_products', JSON.stringify(products));
     localStorage.setItem('dpm_brand', JSON.stringify(brand));
     localStorage.setItem('dpm_customers', JSON.stringify(customers));
-    localStorage.setItem('dpm_history', JSON.stringify(history));
-    localStorage.setItem('dpm_orders', JSON.stringify(orders));
     document.documentElement.style.setProperty('--primary-color', brand.primaryColor);
-  }, [params, products, brand, customers, history, orders]);
+  }, [params, products, brand, customers]);
 
   const quote = useMemo(() => calculateQuote(formData, params, products), [formData, params, products]);
   
@@ -816,10 +815,37 @@ const App: React.FC = () => {
       setIsGeneratingPdf(false); 
     }
   };
+  const compressImage = (base64: string, maxWidth = 800, quality = 0.6): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+    });
+  };
+
   const addOrderPhoto = async (orderId: string, base64: string) => {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
-    const photos = [...(order.deliveryPhotos || []), base64];
+    
+    // Compress before saving
+    const compressed = await compressImage(base64);
+    const photos = [...(order.deliveryPhotos || []), compressed];
+    
     if (user && isAuthorized) {
       await updateDoc(doc(db, 'company_data/dpm/orders', orderId), { deliveryPhotos: photos, updatedAt: new Date().toISOString() });
     } else {
@@ -841,7 +867,11 @@ const App: React.FC = () => {
   const addQuotePhoto = async (quoteId: string, base64: string) => {
     const quote = history.find(q => q.id === quoteId);
     if (!quote) return;
-    const photos = [...(quote.deliveryPhotos || []), base64];
+    
+    // Compress before saving
+    const compressed = await compressImage(base64);
+    const photos = [...(quote.deliveryPhotos || []), compressed];
+    
     if (user && isAuthorized) {
       await updateDoc(doc(db, 'company_data/dpm/quotes', quoteId), { deliveryPhotos: photos });
     } else {
