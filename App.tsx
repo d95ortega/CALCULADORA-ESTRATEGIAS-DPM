@@ -726,6 +726,10 @@ const App: React.FC = () => {
     }
   };
 
+  const generatePdf = async (customConfig?: { 
+    customer: Customer; 
+    items: SavedJob[]; 
+    quoteId: string; 
     isOrder: boolean; 
     isLabel?: boolean;
     date?: string;
@@ -754,35 +758,16 @@ const App: React.FC = () => {
     setIsGeneratingPdf(true);
     try {
       // Wait for React to update the PDFTemplate in the DOM with the new pdfConfig
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 800));
       
       const element = document.getElementById('quote-document');
-      if (!element) {
-        throw new Error("El elemento 'quote-document' no fue encontrado en el DOM.");
-      }
+      if (!element) return;
 
-      // Ensure all images within the element are fully loaded
-      const images = element.getElementsByTagName('img');
-      const imagePromises = Array.from(images).map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((resolve) => {
-          img.onload = resolve;
-          img.onerror = resolve;
-        });
-      });
-      await Promise.all(imagePromises);
-      
-      // Dynamic import for performance
-      const [html2canvasModule, jsPDFModule] = await Promise.all([
-        import('html2canvas'),
-        import('jspdf')
-      ]);
-      
-      const html2canvas = html2canvasModule.default;
-      const jsPDF = jsPDFModule.jsPDF;
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
 
       const canvas = await html2canvas(element, { 
-        scale: 1.5, // Slightly lower scale for better performance and stability
+        scale: 1.5, 
         useCORS: true, 
         backgroundColor: '#ffffff',
         logging: true,
@@ -807,7 +792,6 @@ const App: React.FC = () => {
       let heightLeft = imgHeight;
       let position = 0;
 
-      // Add the first page
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
       heightLeft -= pageHeight;
 
@@ -832,7 +816,6 @@ const App: React.FC = () => {
       setIsGeneratingPdf(false); 
     }
   };
-
   const addOrderPhoto = async (orderId: string, base64: string) => {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
