@@ -40,9 +40,9 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
 );
 
 // Lazy Views
-const DashboardView = lazy(() => import('./src/components/views/DashboardView'));
+import DashboardView from './src/components/views/DashboardView';
+import CalculatorView from './src/components/views/CalculatorView';
 const SettingsView = lazy(() => import('./src/components/views/SettingsView'));
-const CalculatorView = lazy(() => import('./src/components/views/CalculatorView'));
 const QuotesView = lazy(() => import('./src/components/views/QuotesView'));
 const OrdersView = lazy(() => import('./src/components/views/OrdersView'));
 const CustomersView = lazy(() => import('./src/components/views/CustomersView'));
@@ -129,8 +129,14 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('dpm_customers');
     return saved ? JSON.parse(saved) : [];
   });
-  const [history, setHistory] = useState<QuoteHistoryEntry[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [history, setHistory] = useState<QuoteHistoryEntry[]>(() => {
+    const saved = localStorage.getItem('dpm_history');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [orders, setOrders] = useState<Order[]>(() => {
+    const saved = localStorage.getItem('dpm_orders');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [activeSettingsTab, setActiveSettingsTab] = useState<'products' | 'costs' | 'params' | 'brand' | 'users' | 'backup'>('products');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [initialStatus, setInitialStatus] = useState<QuoteStatus>('PENDIENTE');
@@ -364,8 +370,15 @@ const App: React.FC = () => {
     localStorage.setItem('dpm_products', JSON.stringify(products));
     localStorage.setItem('dpm_brand', JSON.stringify(brand));
     localStorage.setItem('dpm_customers', JSON.stringify(customers));
+    
+    // Cache history and orders but strip photos to avoid 5MB quota
+    const historyShort = history.slice(0, 50).map(h => ({ ...h, deliveryPhotos: [] }));
+    const ordersShort = orders.slice(0, 50).map(o => ({ ...o, deliveryPhotos: [] }));
+    localStorage.setItem('dpm_history', JSON.stringify(historyShort));
+    localStorage.setItem('dpm_orders', JSON.stringify(ordersShort));
+    
     document.documentElement.style.setProperty('--primary-color', brand.primaryColor);
-  }, [params, products, brand, customers]);
+  }, [params, products, brand, customers, history, orders]);
 
   const quote = useMemo(() => calculateQuote(formData, params, products), [formData, params, products]);
   
