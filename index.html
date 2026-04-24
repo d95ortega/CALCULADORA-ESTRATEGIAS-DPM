@@ -48,11 +48,6 @@
 </head>
 <body>
     <div id="root"></div>
-    <script>
-      console.log("HTML: Body script starting...");
-      window.onload = () => console.log("HTML: Window loaded");
-      window.onerror = (m, s, l, c, e) => console.error("GLOBAL ERROR:", m, s, l, c, e);
-    </script>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="./index.tsx"></script>
 </body>
 </html>

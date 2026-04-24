@@ -62,27 +62,20 @@ const sanitize = (obj: any): any => {
 };
 
 const App: React.FC = () => {
-  console.log("APP: Component initializing...");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [brand, setBrand] = useState(() => {
-    console.log("APP: Initializing brand state");
     try {
       const saved = localStorage.getItem('dpm_brand');
       return saved ? JSON.parse(saved) : DEFAULT_BRAND;
-    } catch (e) { 
-      console.error("APP: Brand state init error", e);
-      return DEFAULT_BRAND; 
-    }
+    } catch { return DEFAULT_BRAND; }
   });
 
   // Versioning system to force reset if needed
   const STORAGE_VERSION = '4.1.0-optimize-load';
   
   useEffect(() => {
-    console.log("APP: Version check effect running...");
     const currentVersion = localStorage.getItem('dpm_storage_version');
     if (currentVersion !== STORAGE_VERSION) {
-      console.log("APP: Version mismatch! Resetting params and products...");
       localStorage.removeItem('dpm_params');
       localStorage.removeItem('dpm_products');
       localStorage.setItem('dpm_storage_version', STORAGE_VERSION);
@@ -90,14 +83,12 @@ const App: React.FC = () => {
   }, []);
 
   const [params, setParams] = useState(() => {
-    console.log("APP: Initializing params state");
     try {
       const saved = localStorage.getItem('dpm_params');
       return saved ? JSON.parse(saved) : DEFAULT_PARAMS;
     } catch { return DEFAULT_PARAMS; }
   });
   const [products, setProducts] = useState<Product[]>(() => {
-    console.log("APP: Initializing products state");
     try {
       const saved = localStorage.getItem('dpm_products');
       if (saved) {
@@ -247,20 +238,14 @@ const App: React.FC = () => {
   }, [isAuthReady, user, isAuthorized, isAdmin]);
 
   useEffect(() => {
-    console.log("APP: Auth state listener setup...");
     const unsubscribe = onAuthStateChanged(auth, (u) => {
-      console.log("APP: Auth context updated. User:", u?.email || "Anonymous");
       setUser(u);
       setIsAuthReady(true);
     });
-    return () => {
-      console.log("APP: Auth state listener cleanup");
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    console.log("APP: checkAuth check starting. User status:", !!user);
     if (!user) {
       setIsAuthorized(null);
       setIsAdmin(false);
@@ -268,11 +253,9 @@ const App: React.FC = () => {
     }
 
     const checkAuth = async () => {
-      console.log("APP: Validating authorization for", user.email);
       const isOwner = user.email === OWNER_EMAIL;
       
       if (isOwner) {
-        console.log("APP: Superadmin detected");
         setIsAuthorized(true);
         setIsAdmin(true);
       }
@@ -280,20 +263,16 @@ const App: React.FC = () => {
       const authDocRef = doc(db, 'authorized_users', user.email || '');
       
       try {
-        console.log("APP: Fetching auth doc from Firestore...");
         const authSnap = await getDocFromServer(authDocRef);
         if (authSnap.exists()) {
           const role = authSnap.data()?.role;
-          console.log("APP: Auth doc found. Role:", role);
           setIsAuthorized(true);
           setIsAdmin(isOwner || role === 'admin');
         } else {
-          console.log("APP: Auth doc not found. OwnerStatus:", isOwner);
           setIsAuthorized(isOwner);
           setIsAdmin(isOwner);
         }
       } catch (error) {
-        console.error("APP: Auth check error:", error);
         setIsAuthorized(isOwner);
         setIsAdmin(isOwner);
       }
@@ -1169,7 +1148,6 @@ const App: React.FC = () => {
 
   return (
     <>
-      {console.log("APP: Rendering main UI. AuthReady:", isAuthReady, "User:", !!user, "Authorized:", isAuthorized)}
       <div className="min-h-screen bg-slate-50 text-slate-900 flex overflow-hidden" style={{ '--primary-color': brand.primaryColor } as React.CSSProperties}>
 
       {/* SIDEBAR PERSISTENTE */}
