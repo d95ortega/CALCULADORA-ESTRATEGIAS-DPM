@@ -40,13 +40,13 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
 );
 
 // Lazy Views
-import DashboardView from './src/components/views/DashboardView';
-import CalculatorView from './src/components/views/CalculatorView';
+const DashboardView = lazy(() => import('./src/components/views/DashboardView'));
+const CalculatorView = lazy(() => import('./src/components/views/CalculatorView'));
 const SettingsView = lazy(() => import('./src/components/views/SettingsView'));
 const QuotesView = lazy(() => import('./src/components/views/QuotesView'));
 const OrdersView = lazy(() => import('./src/components/views/OrdersView'));
 const CustomersView = lazy(() => import('./src/components/views/CustomersView'));
-import PDFTemplate from './src/components/views/PDFTemplate';
+const PDFTemplate = lazy(() => import('./src/components/views/PDFTemplate'));
 
 // Helper to remove undefined values for Firestore
 const sanitize = (obj: any): any => {
@@ -64,37 +64,39 @@ const sanitize = (obj: any): any => {
 const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [brand, setBrand] = useState(() => {
-    const saved = localStorage.getItem('dpm_brand');
-    return saved ? JSON.parse(saved) : DEFAULT_BRAND;
+    try {
+      const saved = localStorage.getItem('dpm_brand');
+      return saved ? JSON.parse(saved) : DEFAULT_BRAND;
+    } catch { return DEFAULT_BRAND; }
   });
 
   // Versioning system to force reset if needed
-  const STORAGE_VERSION = '4.1.0-force-factory-reset';
+  const STORAGE_VERSION = '4.1.0-optimize-load';
   
   useEffect(() => {
     const currentVersion = localStorage.getItem('dpm_storage_version');
     if (currentVersion !== STORAGE_VERSION) {
-      // Clear local
       localStorage.removeItem('dpm_params');
       localStorage.removeItem('dpm_products');
       localStorage.setItem('dpm_storage_version', STORAGE_VERSION);
-      
-      // If admin is logged in, we will also overwrite Firestore in the next render cycle
-      // by triggering a reload which will then hit the "saveSharedSettings" if we force it
-      window.location.reload();
+      // Removed automatic reload to prevent infinite loops if localStorage is flaky
     }
   }, []);
 
   const [params, setParams] = useState(() => {
-    const saved = localStorage.getItem('dpm_params');
-    return saved ? JSON.parse(saved) : DEFAULT_PARAMS;
+    try {
+      const saved = localStorage.getItem('dpm_params');
+      return saved ? JSON.parse(saved) : DEFAULT_PARAMS;
+    } catch { return DEFAULT_PARAMS; }
   });
   const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem('dpm_products');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
+    try {
+      const saved = localStorage.getItem('dpm_products');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
     return Object.keys(PRODUCT_PRICES_FINAL).map(name => ({
       name,
       priceFinal: PRODUCT_PRICES_FINAL[name],
@@ -126,16 +128,22 @@ const App: React.FC = () => {
   const [quoteJobs, setQuoteJobs] = useState<SavedJob[]>([]);
   const [customerInfo, setCustomerInfo] = useState({ id: '', name: '', phone: '', taxId: '', address: '', email: '' });
   const [customers, setCustomers] = useState<Customer[]>(() => {
-    const saved = localStorage.getItem('dpm_customers');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('dpm_customers');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
   });
   const [history, setHistory] = useState<QuoteHistoryEntry[]>(() => {
-    const saved = localStorage.getItem('dpm_history');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('dpm_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
   });
   const [orders, setOrders] = useState<Order[]>(() => {
-    const saved = localStorage.getItem('dpm_orders');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('dpm_orders');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
   });
   const [activeSettingsTab, setActiveSettingsTab] = useState<'products' | 'costs' | 'params' | 'brand' | 'users' | 'backup'>('products');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -323,14 +331,15 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!user || !isAuthorized) return;
     const path = 'company_data/dpm/quotes';
+    // Removed orderBy to avoid index errors on new databases
     const q = query(
       collection(db, path), 
-      orderBy('date', 'desc'),
       limit(100)
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as QuoteHistoryEntry));
-      setHistory(data);
+      // Sort in memory to avoid index requirements
+      setHistory(data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, path);
     });
@@ -341,14 +350,15 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!user || !isAuthorized) return;
     const path = 'company_data/dpm/orders';
+    // Removed orderBy to avoid index errors on new databases
     const q = query(
       collection(db, path), 
-      orderBy('updatedAt', 'desc'),
       limit(100)
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
-      setOrders(data);
+      // Sort in memory to avoid index requirements
+      setOrders(data.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, path);
     });
