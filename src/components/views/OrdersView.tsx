@@ -9,7 +9,7 @@ interface OrdersViewProps {
   updateOrderStatus: (id: string, status: OrderStatus) => void;
   deleteOrder: (id: string) => void;
   isAdmin: boolean;
-  generatePdf: (customConfig?: { customer: any; items: any[]; quoteId: string; isOrder: boolean; isLabel?: boolean; date?: string }) => Promise<void>;
+  generatePdf: (customConfig?: { customer: any; items: any[]; quoteId: string; isOrder: boolean; isLabel?: boolean; date?: string; deliveryPhotos?: string[] }) => Promise<void>;
   onAddPhoto: (orderId: string, base64: string) => void;
   onRemovePhoto: (orderId: string, index: number) => void;
 }
@@ -79,7 +79,8 @@ const OrdersView: React.FC<OrdersViewProps> = ({
                             items: order.items, 
                             quoteId: order.id,
                             isOrder: true,
-                            date: order.createdAt
+                            date: order.createdAt,
+                            deliveryPhotos: order.deliveryPhotos
                           })}
                           className="text-slate-300 hover:text-blue-500 transition-colors"
                           title="Descargar Orden de Pedido"
@@ -100,7 +101,8 @@ const OrdersView: React.FC<OrdersViewProps> = ({
                             quoteId: order.id,
                             isOrder: true,
                             isLabel: true,
-                            date: order.createdAt
+                            date: order.createdAt,
+                            deliveryPhotos: order.deliveryPhotos
                           })}
                           className="text-slate-300 hover:text-amber-500 transition-colors"
                           title="Imprimir Etiqueta para Taller"

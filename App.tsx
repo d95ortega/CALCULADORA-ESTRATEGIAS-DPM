@@ -1348,10 +1348,7 @@ const App: React.FC = () => {
                 updateOrderStatus={updateOrderStatus}
                 deleteOrder={deleteOrder}
                 isAdmin={isAdmin}
-                generatePdf={(config) => generatePdf({ 
-                  ...config, 
-                  deliveryPhotos: orders.find(o => o.id === config?.quoteId)?.deliveryPhotos || [] 
-                })}
+                generatePdf={generatePdf}
                 onAddPhoto={addOrderPhoto}
                 onRemovePhoto={removeOrderPhoto}
               />
@@ -1405,6 +1402,7 @@ const App: React.FC = () => {
           quoteNumber={pdfConfig?.quoteId}
           isOrder={pdfConfig?.isOrder}
           date={pdfConfig?.date}
+          deliveryPhotos={pdfConfig?.deliveryPhotos}
         />
       </Suspense>
     </>
