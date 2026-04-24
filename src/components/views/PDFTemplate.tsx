@@ -16,7 +16,7 @@ interface PDFTemplateProps {
 }
 
 const PDFTemplate: React.FC<PDFTemplateProps> = ({ 
-  brand, customerInfo, quoteJobs, quoteNumber, isOrder, date, deliveryPhotos, isLabel 
+  brand, customerInfo, quoteJobs, quoteNumber, isOrder, date, deliveryPhotos, isLabel, isWarehouseLabel
 }) => {
   const emissionDate = date ? new Date(date) : new Date();
   const expirationDate = new Date();
@@ -130,89 +130,89 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({
       <div id="quote-document" style={{ 
         backgroundColor: '#ffffff', 
         visibility: 'visible',
-        padding: (isLabel || isWarehouseLabel) ? '20px' : '30px', /* p-12 equivalent */
+        padding: (isLabel || isWarehouseLabel) ? '15px' : '30px', /* p-12 equivalent */
         width: (isLabel || isWarehouseLabel) ? '400px' : '794px',
         boxSizing: 'border-box',
-        minHeight: (isLabel || isWarehouseLabel) ? '400px' : '1123px',
+        minHeight: isWarehouseLabel ? '500px' : (isLabel ? '350px' : '1123px'),
         display: 'flex',
         flexDirection: 'column',
         border: (isLabel || isWarehouseLabel) ? '4px solid #000' : 'none'
       }}>
         {isWarehouseLabel ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {/* Header Bodega */}
-            <div style={{ borderBottom: '4px solid #000', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ borderBottom: '4px solid #000', paddingBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <h2 style={{ fontSize: '18px', fontWeight: '900', margin: 0, textTransform: 'uppercase' }}>ETIQUETA DE BODEGA</h2>
-                <p style={{ fontSize: '12px', fontWeight: 'bold', margin: 0 }}>{brand.companyName || 'DPM'}</p>
+                <h2 style={{ fontSize: '16px', fontWeight: '900', margin: 0, textTransform: 'uppercase' }}>ETIQUETA DE BODEGA</h2>
+                <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0 }}>{brand.companyName || 'DPM'}</p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                 <p style={{ fontSize: '10px', margin: 0 }}>Fecha: {new Date().toLocaleDateString()}</p>
-                 <p style={{ fontSize: '12px', fontWeight: 'bold', margin: 0 }}>ID: {quoteNumber}</p>
+                 <p style={{ fontSize: '9px', margin: 0 }}>Fecha: {new Date().toLocaleDateString()}</p>
+                 <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0 }}>ID: {quoteNumber}</p>
               </div>
             </div>
 
             {/* Código de Barras Scannable */}
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0', backgroundColor: '#fff' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '5px 0', backgroundColor: '#fff' }}>
               <Barcode 
                 value={quoteNumber || '000000'} 
-                width={2} 
-                height={60} 
-                fontSize={14}
+                width={1.8} 
+                height={50} 
+                fontSize={12}
                 background="#ffffff"
               />
             </div>
 
             {/* Información del Cliente */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '5px' }}>
               <tbody>
                 <tr>
-                  <td style={{ padding: '8px', border: '2px solid #000', width: '30%', backgroundColor: '#eee' }}>
-                    <span style={{ fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase' }}>CLIENTE</span>
+                  <td style={{ padding: '6px', border: '2px solid #000', width: '30%', backgroundColor: '#eee' }}>
+                    <span style={{ fontSize: '9px', fontWeight: 'black', textTransform: 'uppercase' }}>CLIENTE</span>
                   </td>
-                  <td style={{ padding: '8px', border: '2px solid #000' }}>
-                    <span style={{ fontSize: '14px', fontWeight: '900', textTransform: 'uppercase' }}>{customerInfo.name}</span>
+                  <td style={{ padding: '6px', border: '2px solid #000' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '900', textTransform: 'uppercase' }}>{customerInfo.name}</span>
                   </td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '8px', border: '2px solid #000', backgroundColor: '#eee' }}>
-                    <span style={{ fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase' }}>TELÉFONO</span>
+                  <td style={{ padding: '6px', border: '2px solid #000', backgroundColor: '#eee' }}>
+                    <span style={{ fontSize: '9px', fontWeight: 'black', textTransform: 'uppercase' }}>TELÉFONO</span>
                   </td>
-                  <td style={{ padding: '8px', border: '2px solid #000' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 'bold' }}>{customerInfo.phone}</span>
+                  <td style={{ padding: '6px', border: '2px solid #000' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{customerInfo.phone}</span>
                   </td>
                 </tr>
               </tbody>
             </table>
 
             {/* Detalle del Trabajo */}
-            <div style={{ border: '2px solid #000', padding: '10px' }}>
-              <p style={{ fontSize: '10px', fontWeight: 'black', margin: '0 0 5px 0', textTransform: 'uppercase', borderBottom: '1px solid #000' }}>DESCRIPCIÓN DEL PEDIDO:</p>
+            <div style={{ border: '2px solid #000', padding: '8px' }}>
+              <p style={{ fontSize: '9px', fontWeight: 'black', margin: '0 0 4px 0', textTransform: 'uppercase', borderBottom: '1px solid #000' }}>DESCRIPCIÓN DEL PEDIDO:</p>
               {quoteJobs.map((j, idx) => (
-                <div key={idx} style={{ marginBottom: '4px' }}>
-                  <p style={{ fontSize: '12px', fontWeight: 'bold', margin: 0 }}>• {j.job_description.toUpperCase()} x{j.quantity}</p>
+                <div key={idx} style={{ marginBottom: '2px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0 }}>• {j.job_description.toUpperCase()} x{j.quantity}</p>
                 </div>
               ))}
             </div>
 
-            {/* Area de Evidencia (10x14cm approx in pixels at 96dpi is roughly 378x529 but here we adapt to label width) */}
-            <div style={{ marginTop: '10px' }}>
-               <p style={{ fontSize: '10px', fontWeight: 'black', margin: '0 0 5px 0', textTransform: 'uppercase' }}>EVIDENCIA DEL TRABAJO:</p>
-               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            {/* Area de Evidencia */}
+            <div style={{ marginTop: '5px' }}>
+               <p style={{ fontSize: '9px', fontWeight: 'black', margin: '0 0 4px 0', textTransform: 'uppercase' }}>EVIDENCIA DEL TRABAJO:</p>
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                  {(deliveryPhotos || []).slice(0, 2).map((photo, i) => (
-                    <div key={i} style={{ height: '140px', border: '1px solid #000', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div key={i} style={{ height: '110px', border: '1px solid #000', borderRadius: '4px', overflow: 'hidden' }}>
                        <img src={photo} alt="evidencia" style={{ width: '100%', height: '100%', objectFit: 'cover' }} referrerPolicy="no-referrer" />
                     </div>
                  ))}
                  {(deliveryPhotos || []).length === 0 && (
-                   <div style={{ height: '140px', border: '2px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', gridColumn: 'span 2' }}>
-                      <p style={{ fontSize: '10px', color: '#999' }}>Sin fotos de evidencia cargadas</p>
+                   <div style={{ height: '110px', border: '2px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', gridColumn: 'span 2' }}>
+                      <p style={{ fontSize: '9px', color: '#999' }}>Sin fotos de evidencia</p>
                    </div>
                  )}
                </div>
             </div>
 
-            <div style={{ marginTop: 'auto', borderTop: '2px solid #000', paddingTop: '10px', textAlign: 'center' }}>
+            <div style={{ marginTop: 'auto', borderTop: '2px solid #000', paddingTop: '6px', textAlign: 'center' }}>
                <p style={{ fontSize: '8px', margin: 0, fontWeight: 'bold' }}>SISTEMA DE GESTIÓN ESTRATEGIAS DPM - USO INTERNO BODEGA</p>
             </div>
           </div>

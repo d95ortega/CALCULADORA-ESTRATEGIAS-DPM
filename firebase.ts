@@ -86,7 +86,7 @@ async function testConnection() {
     }
   }
 }
-testConnection();
+// testConnection();
 
 export { signInWithPopup, signOut, onAuthStateChanged, collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, doc, setDoc, getDocFromServer, limit, orderBy };
 export type { User };
