@@ -39,14 +39,14 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// Lazy Views
-const DashboardView = lazy(() => import('./src/components/views/DashboardView'));
-const CalculatorView = lazy(() => import('./src/components/views/CalculatorView'));
-const SettingsView = lazy(() => import('./src/components/views/SettingsView'));
-const QuotesView = lazy(() => import('./src/components/views/QuotesView'));
-const OrdersView = lazy(() => import('./src/components/views/OrdersView'));
-const CustomersView = lazy(() => import('./src/components/views/CustomersView'));
-const PDFTemplate = lazy(() => import('./src/components/views/PDFTemplate'));
+// Views
+import DashboardView from './src/components/views/DashboardView';
+import CalculatorView from './src/components/views/CalculatorView';
+import SettingsView from './src/components/views/SettingsView';
+import QuotesView from './src/components/views/QuotesView';
+import OrdersView from './src/components/views/OrdersView';
+import CustomersView from './src/components/views/CustomersView';
+import PDFTemplate from './src/components/views/PDFTemplate';
 
 // Helper to remove undefined values for Firestore
 const sanitize = (obj: any): any => {
@@ -62,34 +62,42 @@ const sanitize = (obj: any): any => {
 };
 
 const App: React.FC = () => {
+  console.log("APP: Component initializing...");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [brand, setBrand] = useState(() => {
+    console.log("APP: Initializing brand state");
     try {
       const saved = localStorage.getItem('dpm_brand');
       return saved ? JSON.parse(saved) : DEFAULT_BRAND;
-    } catch { return DEFAULT_BRAND; }
+    } catch (e) { 
+      console.error("APP: Brand state init error", e);
+      return DEFAULT_BRAND; 
+    }
   });
 
   // Versioning system to force reset if needed
   const STORAGE_VERSION = '4.1.0-optimize-load';
   
   useEffect(() => {
+    console.log("APP: Version check effect running...");
     const currentVersion = localStorage.getItem('dpm_storage_version');
     if (currentVersion !== STORAGE_VERSION) {
+      console.log("APP: Version mismatch! Resetting params and products...");
       localStorage.removeItem('dpm_params');
       localStorage.removeItem('dpm_products');
       localStorage.setItem('dpm_storage_version', STORAGE_VERSION);
-      // Removed automatic reload to prevent infinite loops if localStorage is flaky
     }
   }, []);
 
   const [params, setParams] = useState(() => {
+    console.log("APP: Initializing params state");
     try {
       const saved = localStorage.getItem('dpm_params');
       return saved ? JSON.parse(saved) : DEFAULT_PARAMS;
     } catch { return DEFAULT_PARAMS; }
   });
   const [products, setProducts] = useState<Product[]>(() => {
+    console.log("APP: Initializing products state");
     try {
       const saved = localStorage.getItem('dpm_products');
       if (saved) {
@@ -239,14 +247,20 @@ const App: React.FC = () => {
   }, [isAuthReady, user, isAuthorized, isAdmin]);
 
   useEffect(() => {
+    console.log("APP: Auth state listener setup...");
     const unsubscribe = onAuthStateChanged(auth, (u) => {
+      console.log("APP: Auth context updated. User:", u?.email || "Anonymous");
       setUser(u);
       setIsAuthReady(true);
     });
-    return () => unsubscribe();
+    return () => {
+      console.log("APP: Auth state listener cleanup");
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
+    console.log("APP: checkAuth check starting. User status:", !!user);
     if (!user) {
       setIsAuthorized(null);
       setIsAdmin(false);
@@ -254,9 +268,11 @@ const App: React.FC = () => {
     }
 
     const checkAuth = async () => {
+      console.log("APP: Validating authorization for", user.email);
       const isOwner = user.email === OWNER_EMAIL;
       
       if (isOwner) {
+        console.log("APP: Superadmin detected");
         setIsAuthorized(true);
         setIsAdmin(true);
       }
@@ -264,17 +280,20 @@ const App: React.FC = () => {
       const authDocRef = doc(db, 'authorized_users', user.email || '');
       
       try {
+        console.log("APP: Fetching auth doc from Firestore...");
         const authSnap = await getDocFromServer(authDocRef);
         if (authSnap.exists()) {
           const role = authSnap.data()?.role;
+          console.log("APP: Auth doc found. Role:", role);
           setIsAuthorized(true);
           setIsAdmin(isOwner || role === 'admin');
         } else {
+          console.log("APP: Auth doc not found. OwnerStatus:", isOwner);
           setIsAuthorized(isOwner);
           setIsAdmin(isOwner);
         }
       } catch (error) {
-        console.error("Auth check error:", error);
+        console.error("APP: Auth check error:", error);
         setIsAuthorized(isOwner);
         setIsAdmin(isOwner);
       }
@@ -1150,6 +1169,7 @@ const App: React.FC = () => {
 
   return (
     <>
+      {console.log("APP: Rendering main UI. AuthReady:", isAuthReady, "User:", !!user, "Authorized:", isAuthorized)}
       <div className="min-h-screen bg-slate-50 text-slate-900 flex overflow-hidden" style={{ '--primary-color': brand.primaryColor } as React.CSSProperties}>
 
       {/* SIDEBAR PERSISTENTE */}
@@ -1284,12 +1304,6 @@ const App: React.FC = () => {
 
         {/* ÁREA DE SCROLL DE CONTENIDO */}
         <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
-          <Suspense fallback={
-            <div className="flex flex-col items-center justify-center h-full gap-4 animate-pulse">
-              <Loader2 className="w-12 h-12 brand-text animate-spin" />
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300">Optimizando Interfaz...</p>
-            </div>
-          }>
             {activeView === 'dashboard' && (
               <DashboardView 
                 orders={orders} 
@@ -1392,23 +1406,20 @@ const App: React.FC = () => {
               onExportData={exportData}
             />
           )}
-          </Suspense>
         </div>
       </div>
     </div>
 
-      <Suspense fallback={null}>
-        <PDFTemplate 
-          brand={brand}
-          customerInfo={pdfConfig?.customer || customerInfo as Customer}
-          quoteJobs={pdfConfig?.items || quoteJobs}
-          quoteNumber={pdfConfig?.quoteId}
-          isOrder={pdfConfig?.isOrder}
-          date={pdfConfig?.date}
-          deliveryPhotos={pdfConfig?.deliveryPhotos}
-          isWarehouseLabel={pdfConfig?.isWarehouseLabel}
-        />
-      </Suspense>
+      <PDFTemplate 
+        brand={brand}
+        customerInfo={pdfConfig?.customer || customerInfo as Customer}
+        quoteJobs={pdfConfig?.items || quoteJobs}
+        quoteNumber={pdfConfig?.quoteId}
+        isOrder={pdfConfig?.isOrder}
+        date={pdfConfig?.date}
+        deliveryPhotos={pdfConfig?.deliveryPhotos}
+        isWarehouseLabel={pdfConfig?.isWarehouseLabel}
+      />
     </>
   );
 };
