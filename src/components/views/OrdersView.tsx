@@ -9,7 +9,7 @@ interface OrdersViewProps {
   updateOrderStatus: (id: string, status: OrderStatus) => void;
   deleteOrder: (id: string) => void;
   isAdmin: boolean;
-  generatePdf: (customConfig?: { customer: any; items: any[]; quoteId: string; isOrder: boolean; isLabel?: boolean; date?: string; deliveryPhotos?: string[] }) => Promise<void>;
+  generatePdf: (customConfig?: { customer: any; items: any[]; quoteId: string; isOrder: boolean; isLabel?: boolean; isWarehouseLabel?: boolean; date?: string; deliveryPhotos?: string[] }) => Promise<void>;
   onAddPhoto: (orderId: string, base64: string) => void;
   onRemovePhoto: (orderId: string, index: number) => void;
 }
@@ -108,6 +108,28 @@ const OrdersView: React.FC<OrdersViewProps> = ({
                           title="Imprimir Etiqueta para Taller"
                         >
                           <Tag className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          onClick={() => generatePdf({ 
+                            customer: { 
+                              id: '', 
+                              name: order.customerName, 
+                              phone: order.customerPhone, 
+                              email: order.customerEmail || '', 
+                              address: order.customerAddress || '', 
+                              taxId: '' 
+                            }, 
+                            items: order.items, 
+                            quoteId: order.id,
+                            isOrder: true,
+                            isWarehouseLabel: true,
+                            date: order.createdAt,
+                            deliveryPhotos: order.deliveryPhotos
+                          })}
+                          className="text-slate-300 hover:text-emerald-500 transition-colors"
+                          title="Generar Etiqueta de Bodega"
+                        >
+                          <Package className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={() => deleteOrder(order.id)} className="text-slate-300 hover:text-red-500 transition-colors">
                           <Trash2 className="w-3.5 h-3.5" />

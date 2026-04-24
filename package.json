@@ -19,6 +19,7 @@
     "motion": "^12.38.0",
     "postcss": "^8.5.10",
     "react": "^19.2.3",
+    "react-barcode": "^1.6.1",
     "react-dom": "^19.2.3",
     "tailwindcss": "^4.2.2"
   },

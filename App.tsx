@@ -158,6 +158,7 @@ const App: React.FC = () => {
     quoteId: string;
     isOrder: boolean;
     isLabel?: boolean;
+    isWarehouseLabel?: boolean;
     date?: string;
     deliveryPhotos?: string[];
   } | null>(null);
@@ -754,6 +755,7 @@ const App: React.FC = () => {
     quoteId: string; 
     isOrder: boolean; 
     isLabel?: boolean;
+    isWarehouseLabel?: boolean;
     date?: string;
     deliveryPhotos?: string[];
   }) => {
@@ -773,6 +775,7 @@ const App: React.FC = () => {
       quoteId: 'PROPUESTA', 
       isOrder: false,
       isLabel: false,
+      isWarehouseLabel: false,
       date: new Date().toISOString(),
       deliveryPhotos: []
     });
@@ -1403,6 +1406,7 @@ const App: React.FC = () => {
           isOrder={pdfConfig?.isOrder}
           date={pdfConfig?.date}
           deliveryPhotos={pdfConfig?.deliveryPhotos}
+          isWarehouseLabel={pdfConfig?.isWarehouseLabel}
         />
       </Suspense>
     </>

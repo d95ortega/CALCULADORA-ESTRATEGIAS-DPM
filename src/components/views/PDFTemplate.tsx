@@ -1,6 +1,7 @@
 import React from 'react';
 import { Smartphone, Phone } from 'lucide-react';
 import { BrandSettings, Customer, SavedJob } from '@/types';
+import Barcode from 'react-barcode';
 
 interface PDFTemplateProps {
   brand: BrandSettings;
@@ -11,6 +12,7 @@ interface PDFTemplateProps {
   date?: string;
   deliveryPhotos?: string[];
   isLabel?: boolean;
+  isWarehouseLabel?: boolean;
 }
 
 const PDFTemplate: React.FC<PDFTemplateProps> = ({ 
@@ -31,7 +33,7 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({
         position: 'fixed', 
         left: 0, 
         top: 0, 
-        width: isLabel ? '400px' : '794px', // A4/Letter roughly
+        width: (isLabel || isWarehouseLabel) ? '400px' : '794px', // A4/Letter roughly
         zIndex: -100, 
         visibility: 'hidden', 
         pointerEvents: 'none',
@@ -128,15 +130,93 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({
       <div id="quote-document" style={{ 
         backgroundColor: '#ffffff', 
         visibility: 'visible',
-        padding: isLabel ? '20px' : '30px', /* p-12 equivalent */
-        width: isLabel ? '400px' : '794px',
+        padding: (isLabel || isWarehouseLabel) ? '20px' : '30px', /* p-12 equivalent */
+        width: (isLabel || isWarehouseLabel) ? '400px' : '794px',
         boxSizing: 'border-box',
-        minHeight: isLabel ? '400px' : '1123px',
+        minHeight: (isLabel || isWarehouseLabel) ? '400px' : '1123px',
         display: 'flex',
         flexDirection: 'column',
-        border: isLabel ? '2px solid #000' : 'none'
+        border: (isLabel || isWarehouseLabel) ? '4px solid #000' : 'none'
       }}>
-        {isLabel ? (
+        {isWarehouseLabel ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            {/* Header Bodega */}
+            <div style={{ borderBottom: '4px solid #000', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h2 style={{ fontSize: '18px', fontWeight: '900', margin: 0, textTransform: 'uppercase' }}>ETIQUETA DE BODEGA</h2>
+                <p style={{ fontSize: '12px', fontWeight: 'bold', margin: 0 }}>{brand.companyName || 'DPM'}</p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                 <p style={{ fontSize: '10px', margin: 0 }}>Fecha: {new Date().toLocaleDateString()}</p>
+                 <p style={{ fontSize: '12px', fontWeight: 'bold', margin: 0 }}>ID: {quoteNumber}</p>
+              </div>
+            </div>
+
+            {/* Código de Barras Scannable */}
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0', backgroundColor: '#fff' }}>
+              <Barcode 
+                value={quoteNumber || '000000'} 
+                width={2} 
+                height={60} 
+                fontSize={14}
+                background="#ffffff"
+              />
+            </div>
+
+            {/* Información del Cliente */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+              <tbody>
+                <tr>
+                  <td style={{ padding: '8px', border: '2px solid #000', width: '30%', backgroundColor: '#eee' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase' }}>CLIENTE</span>
+                  </td>
+                  <td style={{ padding: '8px', border: '2px solid #000' }}>
+                    <span style={{ fontSize: '14px', fontWeight: '900', textTransform: 'uppercase' }}>{customerInfo.name}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '8px', border: '2px solid #000', backgroundColor: '#eee' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase' }}>TELÉFONO</span>
+                  </td>
+                  <td style={{ padding: '8px', border: '2px solid #000' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 'bold' }}>{customerInfo.phone}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Detalle del Trabajo */}
+            <div style={{ border: '2px solid #000', padding: '10px' }}>
+              <p style={{ fontSize: '10px', fontWeight: 'black', margin: '0 0 5px 0', textTransform: 'uppercase', borderBottom: '1px solid #000' }}>DESCRIPCIÓN DEL PEDIDO:</p>
+              {quoteJobs.map((j, idx) => (
+                <div key={idx} style={{ marginBottom: '4px' }}>
+                  <p style={{ fontSize: '12px', fontWeight: 'bold', margin: 0 }}>• {j.job_description.toUpperCase()} x{j.quantity}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Area de Evidencia (10x14cm approx in pixels at 96dpi is roughly 378x529 but here we adapt to label width) */}
+            <div style={{ marginTop: '10px' }}>
+               <p style={{ fontSize: '10px', fontWeight: 'black', margin: '0 0 5px 0', textTransform: 'uppercase' }}>EVIDENCIA DEL TRABAJO:</p>
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                 {(deliveryPhotos || []).slice(0, 2).map((photo, i) => (
+                    <div key={i} style={{ height: '140px', border: '1px solid #000', borderRadius: '4px', overflow: 'hidden' }}>
+                       <img src={photo} alt="evidencia" style={{ width: '100%', height: '100%', objectFit: 'cover' }} referrerPolicy="no-referrer" />
+                    </div>
+                 ))}
+                 {(deliveryPhotos || []).length === 0 && (
+                   <div style={{ height: '140px', border: '2px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', gridColumn: 'span 2' }}>
+                      <p style={{ fontSize: '10px', color: '#999' }}>Sin fotos de evidencia cargadas</p>
+                   </div>
+                 )}
+               </div>
+            </div>
+
+            <div style={{ marginTop: 'auto', borderTop: '2px solid #000', paddingTop: '10px', textAlign: 'center' }}>
+               <p style={{ fontSize: '8px', margin: 0, fontWeight: 'bold' }}>SISTEMA DE GESTIÓN ESTRATEGIAS DPM - USO INTERNO BODEGA</p>
+            </div>
+          </div>
+        ) : isLabel ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {/* Header Etiqueta */}
             <div style={{ borderBottom: '2px solid #000', pb: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
