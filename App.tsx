@@ -39,14 +39,14 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// Views
-import DashboardView from './src/components/views/DashboardView';
-import CalculatorView from './src/components/views/CalculatorView';
-import SettingsView from './src/components/views/SettingsView';
-import QuotesView from './src/components/views/QuotesView';
-import OrdersView from './src/components/views/OrdersView';
-import CustomersView from './src/components/views/CustomersView';
-import PDFTemplate from './src/components/views/PDFTemplate';
+// Lazy Views
+const DashboardView = lazy(() => import('./src/components/views/DashboardView'));
+const CalculatorView = lazy(() => import('./src/components/views/CalculatorView'));
+const SettingsView = lazy(() => import('./src/components/views/SettingsView'));
+const QuotesView = lazy(() => import('./src/components/views/QuotesView'));
+const OrdersView = lazy(() => import('./src/components/views/OrdersView'));
+const CustomersView = lazy(() => import('./src/components/views/CustomersView'));
+const PDFTemplate = lazy(() => import('./src/components/views/PDFTemplate'));
 
 // Helper to remove undefined values for Firestore
 const sanitize = (obj: any): any => {
@@ -1282,6 +1282,12 @@ const App: React.FC = () => {
 
         {/* ÁREA DE SCROLL DE CONTENIDO */}
         <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
+          <Suspense fallback={
+            <div className="flex flex-col items-center justify-center h-full gap-4 animate-pulse">
+              <Loader2 className="w-12 h-12 brand-text animate-spin" />
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300">Optimizando Interfaz...</p>
+            </div>
+          }>
             {activeView === 'dashboard' && (
               <DashboardView 
                 orders={orders} 
@@ -1384,10 +1390,12 @@ const App: React.FC = () => {
               onExportData={exportData}
             />
           )}
+          </Suspense>
         </div>
       </div>
     </div>
 
+    <Suspense fallback={null}>
       <PDFTemplate 
         brand={brand}
         customerInfo={pdfConfig?.customer || customerInfo as Customer}
@@ -1398,6 +1406,7 @@ const App: React.FC = () => {
         deliveryPhotos={pdfConfig?.deliveryPhotos}
         isWarehouseLabel={pdfConfig?.isWarehouseLabel}
       />
+    </Suspense>
     </>
   );
 };
