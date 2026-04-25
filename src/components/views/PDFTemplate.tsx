@@ -187,7 +187,8 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({
 
             {/* Detalle del Trabajo */}
             <div style={{ border: '2px solid #000', padding: '8px' }}>
-              <p style={{ fontSize: '9px', fontWeight: 'black', margin: '0 0 4px 0', textTransform: 'uppercase', borderBottom: '1px solid #000' }}>DESCRIPCIÓN DEL PEDIDO:</p>
+              <p style={{ fontSize: '9px', fontWeight: '900', margin: '0 0 6px 0', textTransform: 'uppercase' }}>DESCRIPCIÓN DEL PEDIDO:</p>
+              <div style={{ borderTop: '1px solid #000', marginBottom: '6px' }}></div>
               {quoteJobs.map((j, idx) => (
                 <div key={idx} style={{ marginBottom: '2px' }}>
                   <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0 }}>• {j.job_description.toUpperCase()} x{j.quantity}</p>
