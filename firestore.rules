@@ -41,17 +41,17 @@ service cloud.firestore {
     }
 
     function isAuthorized() {
-      return isAuthenticated() && (
-        exists(/databases/$(database)/documents/authorized_users/$(request.auth.token.email)) ||
-        request.auth.token.email == "estrategiaslaunion@gmail.com"
+      return isAuthenticated() && request.auth.token.email != null && (
+        request.auth.token.email.lower() == "estrategiaslaunion@gmail.com" ||
+        exists(/databases/$(database)/documents/authorized_users/$(request.auth.token.email.lower()))
       );
     }
 
     function isAdmin() {
-      return isAuthenticated() && (
-        (exists(/databases/$(database)/documents/authorized_users/$(request.auth.token.email)) && 
-         get(/databases/$(database)/documents/authorized_users/$(request.auth.token.email)).data.role == 'admin') ||
-        request.auth.token.email == "estrategiaslaunion@gmail.com"
+      return isAuthenticated() && request.auth.token.email != null && (
+        request.auth.token.email.lower() == "estrategiaslaunion@gmail.com" ||
+        (exists(/databases/$(database)/documents/authorized_users/$(request.auth.token.email.lower())) && 
+         get(/databases/$(database)/documents/authorized_users/$(request.auth.token.email.lower())).data.role == 'admin')
       );
     }
 
@@ -73,46 +73,20 @@ service cloud.firestore {
     // Domain Validators
     // ===============================================================
 
-    function isValidAuthorizedUser(data) {
-      return hasOnlyAllowedFields(['email', 'role', 'addedAt']) &&
-             isValidEmail(data.email) &&
-             data.role in ['admin', 'user'] &&
-             isValidDateString(data.addedAt);
-    }
-
-    function isValidCustomer(data) {
-      return hasOnlyAllowedFields(['name', 'phone', 'email', 'address', 'notes', 'createdAt', 'quotesCount', 'taxId']) &&
-             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-             data.phone is string && data.phone.size() <= 20 &&
-             (!('email' in data) || isValidEmail(data.email)) &&
-             (!('address' in data) || (data.address is string && data.address.size() <= 200)) &&
-             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
-             isValidDateString(data.createdAt) &&
-             data.quotesCount is number && data.quotesCount >= 0;
-    }
-
     function isValidQuote(data) {
-      return hasOnlyAllowedFields(['customerName', 'customerPhone', 'date', 'total', 'items', 'orderId', 'status', 'isDraft']) &&
-             data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
-             data.customerPhone is string && data.customerPhone.size() <= 60 &&
-             isValidDateString(data.date) &&
-             data.total is number && data.total >= 0 &&
-             data.items is list && data.items.size() <= 50 &&
-             (!('orderId' in data) || (data.orderId is string)) &&
-             data.status in ['PENDIENTE', 'ENVIADA', 'APROBADA', 'PAGADA', 'RECHAZADA'];
+      return data.customerName is string && data.customerName.size() > 0 && 
+             data.date is string &&
+             data.total is number &&
+             data.items is list &&
+             data.status is string;
     }
 
     function isValidOrder(data) {
-      return hasOnlyAllowedFields(['quoteId', 'customerName', 'customerPhone', 'total', 'status', 'createdAt', 'updatedAt', 'items', 'notes']) &&
-             data.quoteId is string &&
-             data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
-             data.customerPhone is string && data.customerPhone.size() >= 0 && data.customerPhone.size() <= 60 &&
-             data.total is number && data.total >= 0 &&
-             data.status in ['NUEVA', 'PRODUCCION', 'TERMINADO', 'ENTREGADO', 'RECIBIDO', 'ENVIADO'] &&
-             isValidDateString(data.createdAt) &&
-             isValidDateString(data.updatedAt) &&
-             data.items is list && data.items.size() <= 50 &&
-             (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000));
+      return data.quoteId is string &&
+             data.customerName is string &&
+             data.status is string &&
+             data.createdAt is string &&
+             data.items is list;
     }
 
     // ===============================================================
@@ -121,31 +95,26 @@ service cloud.firestore {
 
     match /authorized_users/{email} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin() && isValidAuthorizedUser(request.resource.data);
+      allow write: if isAdmin();
     }
 
     match /company_data/dpm {
+      allow read: if isAuthorized();
+      
       match /customers/{customerId} {
-        allow read: if isAuthorized();
-        allow create, update: if isAuthorized() && isValidCustomer(request.resource.data);
-        allow delete: if isAuthorized();
+        allow read, write: if isAuthorized();
       }
 
       match /quotes/{quoteId} {
-        allow read: if isAuthorized();
-        allow create, update: if isAuthorized() && isValidQuote(request.resource.data);
-        allow delete: if isAuthorized();
+        allow read, write: if isAuthorized();
       }
 
       match /orders/{orderId} {
-        allow read: if isAuthorized();
-        allow create, update: if isAuthorized() && isValidOrder(request.resource.data);
-        allow delete: if isAuthorized();
+        allow read, write: if isAuthorized();
       }
 
       match /settings/current {
-        allow read: if isAuthorized();
-        allow write: if isAdmin();
+        allow read, write: if isAuthorized();
       }
     }
 

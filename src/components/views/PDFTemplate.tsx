@@ -186,12 +186,14 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({
             </table>
 
             {/* Detalle del Trabajo */}
-            <div style={{ border: '2px solid #000', padding: '8px' }}>
-              <p style={{ fontSize: '9px', fontWeight: '900', margin: '0 0 6px 0', textTransform: 'uppercase' }}>DESCRIPCIÓN DEL PEDIDO:</p>
-              <div style={{ borderTop: '1px solid #000', marginBottom: '6px' }}></div>
+            <div style={{ border: '2px solid #000', padding: '8px', marginTop: '4px' }}>
+              <div style={{ borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '6px' }}>
+                <p style={{ fontSize: '10px', fontWeight: '900', margin: 0, textTransform: 'uppercase' }}>DETALLE DEL PEDIDO:</p>
+              </div>
               {quoteJobs.map((j, idx) => (
-                <div key={idx} style={{ marginBottom: '2px' }}>
-                  <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0 }}>• {j.job_description.toUpperCase()} x{j.quantity}</p>
+                <div key={idx} style={{ marginBottom: '4px', borderBottom: idx < quoteJobs.length - 1 ? '1px dashed #eee' : 'none', paddingBottom: '2px' }}>
+                  <p style={{ fontSize: '12px', fontWeight: '900', margin: 0 }}>• {j.job_description.toUpperCase()} (x{j.quantity})</p>
+                  <p style={{ fontSize: '9px', fontWeight: 'bold', color: '#444', margin: 0 }}>{j.detailed_description ? j.detailed_description.toUpperCase() : ''}</p>
                 </div>
               ))}
             </div>

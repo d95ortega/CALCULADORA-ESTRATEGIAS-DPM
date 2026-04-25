@@ -1413,6 +1413,7 @@ const App: React.FC = () => {
         isOrder={pdfConfig?.isOrder}
         date={pdfConfig?.date}
         deliveryPhotos={pdfConfig?.deliveryPhotos}
+        isLabel={pdfConfig?.isLabel}
         isWarehouseLabel={pdfConfig?.isWarehouseLabel}
       />
     </>
