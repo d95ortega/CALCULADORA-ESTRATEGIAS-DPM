@@ -260,7 +260,7 @@ const App: React.FC = () => {
         setIsAdmin(true);
       }
 
-      const authDocRef = doc(db, 'authorized_users', user.email || '');
+      const authDocRef = doc(db, 'authorized_users', (user.email || '').toLowerCase());
       
       try {
         const authSnap = await getDocFromServer(authDocRef);

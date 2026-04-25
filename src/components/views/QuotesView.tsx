@@ -198,6 +198,17 @@ const QuotesView: React.FC<QuotesViewProps> = ({
                         >
                           <RefreshCcw className="w-3.5 h-3.5" />
                         </button>
+                        <button 
+                          onClick={() => {
+                            if (window.confirm('¿Estás seguro de que deseas eliminar esta cotización?')) {
+                              handleDeleteQuote(h.id);
+                            }
+                          }}
+                          title="Eliminar Cotización"
+                          className="p-2 bg-white rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm border border-slate-100"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                         <div className="relative group/actions">
                           <button className="p-2 bg-white rounded-lg text-slate-400 hover:text-slate-600 transition-all shadow-sm border border-slate-100 focus:outline-none">
                             <Settings className="w-3.5 h-3.5" />
@@ -226,13 +237,6 @@ const QuotesView: React.FC<QuotesViewProps> = ({
                                 Marcar como {status}
                               </button>
                             ))}
-                            <div className="h-px bg-slate-100 my-2" />
-                            <button 
-                              onClick={() => handleDeleteQuote(h.id)}
-                              className="w-full text-left px-3 py-2 rounded-lg text-[9px] font-black uppercase text-red-500 hover:bg-red-50 transition-all flex items-center gap-2"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" /> Eliminar
-                            </button>
                           </div>
                         </div>
                       </div>
