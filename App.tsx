@@ -200,6 +200,7 @@ const App: React.FC = () => {
   const handleDeleteAuthorizedUser = (email: string) => removeAuthorizedUser(email);
 
   const OWNER_EMAIL = 'estrategiaslaunion@gmail.com';
+  const SECOND_OWNER_EMAIL = 'ortegadiana10@gmail.com';
 
   // Effect to force-push factory defaults to Firestore if version is new and user is admin
   useEffect(() => {
@@ -253,14 +254,15 @@ const App: React.FC = () => {
     }
 
     const checkAuth = async () => {
-      const isOwner = user.email === OWNER_EMAIL;
+      const email = (user.email || '').toLowerCase();
+      const isOwner = email === OWNER_EMAIL || email === SECOND_OWNER_EMAIL;
       
       if (isOwner) {
         setIsAuthorized(true);
         setIsAdmin(true);
       }
 
-      const authDocRef = doc(db, 'authorized_users', (user.email || '').toLowerCase());
+      const authDocRef = doc(db, 'authorized_users', email);
       
       try {
         const authSnap = await getDocFromServer(authDocRef);

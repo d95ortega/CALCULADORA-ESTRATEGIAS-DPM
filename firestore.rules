@@ -43,6 +43,7 @@ service cloud.firestore {
     function isAuthorized() {
       return isAuthenticated() && request.auth.token.email != null && (
         request.auth.token.email.lower() == "estrategiaslaunion@gmail.com" ||
+        request.auth.token.email.lower() == "ortegadiana10@gmail.com" ||
         exists(/databases/$(database)/documents/authorized_users/$(request.auth.token.email.lower()))
       );
     }
@@ -50,6 +51,7 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && request.auth.token.email != null && (
         request.auth.token.email.lower() == "estrategiaslaunion@gmail.com" ||
+        request.auth.token.email.lower() == "ortegadiana10@gmail.com" ||
         (exists(/databases/$(database)/documents/authorized_users/$(request.auth.token.email.lower())) && 
          get(/databases/$(database)/documents/authorized_users/$(request.auth.token.email.lower())).data.role == 'admin')
       );
