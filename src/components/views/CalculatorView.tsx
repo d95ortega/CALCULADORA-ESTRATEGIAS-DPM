@@ -98,8 +98,29 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
             >
               <option value="">Seleccionar Producto...</option>
               {products.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+              <option value="Otro">Otro (Servicio Personalizado)</option>
             </select>
           </div>
+
+          {formData.job_description === 'Otro' && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="space-y-2.5"
+            >
+              <label className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                <Box className="w-3 h-3 brand-text" /> Nombre del Servicio o Producto
+              </label>
+              <input 
+                type="text" 
+                id="custom_job_description" 
+                value={formData.custom_job_description || ''} 
+                onChange={(e) => setFormData(f => ({...f, custom_job_description: e.target.value}))} 
+                placeholder="Ej: Pintura especial, Mano de obra extra, etc..."
+                className="w-full bg-slate-50 border-2 border-transparent ring-1 ring-slate-200 rounded-2xl px-5 py-4 text-sm font-bold focus:ring-4 focus:ring-red-500/10 focus:border-red-500 focus:bg-white transition-all shadow-sm outline-none"
+              />
+            </motion.div>
+          )}
 
           <div className="space-y-2.5">
             <label className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
@@ -114,7 +135,7 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
             />
           </div>
 
-          {!isAcrilicoJob && (
+          {!isAcrilicoJob && formData.job_description !== 'Otro' && (
             <motion.div 
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
@@ -138,23 +159,25 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
           )}
 
           <div className="grid grid-cols-2 gap-5">
-            <div className="space-y-2">
+            <div className={`space-y-2 ${formData.job_description === 'Otro' ? 'col-span-2' : ''}`}>
               <label className="text-[10px] font-black text-slate-400 uppercase ml-1 tracking-widest">Cantidad</label>
               <div className="relative">
                 <input type="number" id="quantity" value={formData.quantity} onChange={handleInputChange} className="w-full bg-slate-50 p-4 rounded-2xl ring-1 ring-slate-200 text-base font-black focus:ring-4 focus:ring-red-500/10 focus:bg-white transition-all outline-none" />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 uppercase">und</span>
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-1 tracking-widest">Serv. Diseño</label>
-              <button 
-                onClick={() => setFormData(f => ({...f, include_design: !f.include_design}))}
-                className={`h-[56px] w-full rounded-2xl border-2 flex items-center justify-center gap-3 cursor-pointer transition-all duration-300 ${formData.include_design ? 'bg-red-50 border-red-500 shadow-lg shadow-red-500/5' : 'bg-slate-50 border-slate-100 hover:border-slate-200'}`}
-              >
-                <PenTool className={`w-5 h-5 ${formData.include_design ? 'brand-text' : 'text-slate-300'}`} />
-                <span className={`text-[11px] font-black uppercase tracking-widest ${formData.include_design ? 'brand-text' : 'text-slate-400'}`}>{formData.include_design ? "Incluido" : "Omitir"}</span>
-              </button>
-            </div>
+            {formData.job_description !== 'Otro' && (
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-1 tracking-widest">Serv. Diseño</label>
+                <button 
+                  onClick={() => setFormData(f => ({...f, include_design: !f.include_design}))}
+                  className={`h-[56px] w-full rounded-2xl border-2 flex items-center justify-center gap-3 cursor-pointer transition-all duration-300 ${formData.include_design ? 'bg-red-50 border-red-500 shadow-lg shadow-red-500/5' : 'bg-slate-50 border-slate-100 hover:border-slate-200'}`}
+                >
+                  <PenTool className={`w-5 h-5 ${formData.include_design ? 'brand-text' : 'text-slate-300'}`} />
+                  <span className={`text-[11px] font-black uppercase tracking-widest ${formData.include_design ? 'brand-text' : 'text-slate-400'}`}>{formData.include_design ? "Incluido" : "Omitir"}</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {isAnyPendon && (
@@ -190,7 +213,7 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
 
           <div className="bg-red-50 p-6 rounded-[2rem] border border-red-100 space-y-4">
             <h4 className="text-[10px] font-black text-red-600 uppercase tracking-[0.3em] flex items-center gap-2">
-              <DollarSign className="w-3 h-3" /> Precio Manual (Opcional)
+              <DollarSign className="w-3 h-3" /> {formData.job_description === 'Otro' ? 'Precio Unitario Manual' : 'Precio Manual (Opcional)'}
             </h4>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500 font-black">$</span>
@@ -199,11 +222,15 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
                 id="overridePrice" 
                 value={formData.overridePrice || ''} 
                 onChange={handleInputChange} 
-                placeholder="Sobrescribir precio calculado..."
+                placeholder={formData.job_description === 'Otro' ? "Ingresa el precio unitario manual..." : "Sobrescribir precio calculado..."}
                 className="w-full bg-white p-4 pl-8 rounded-2xl ring-1 ring-red-200 text-sm font-black focus:ring-4 focus:ring-red-500/10 outline-none transition-all placeholder:text-red-300" 
               />
             </div>
-            <p className="text-[8px] text-red-400 font-bold uppercase tracking-widest px-1">Si ingresas un valor aquí, se ignorará el cálculo automático.</p>
+            <p className="text-[8px] text-red-400 font-bold uppercase tracking-widest px-1">
+              {formData.job_description === 'Otro' 
+                ? 'Este valor se multiplicará por la cantidad indicada.' 
+                : 'Si ingresas un valor aquí, se ignorará el cálculo automático.'}
+            </p>
           </div>
 
           <div className="pt-6">
@@ -405,13 +432,15 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
 
               <div className="flex flex-col gap-4 text-slate-400 text-[11px] font-bold uppercase tracking-widest">
                 <div className="bg-white/5 px-6 py-3 rounded-2xl border border-white/5">
-                  {isFixedPrice ? (
+                  {formData.job_description === 'Otro' ? (
+                    <p>Precio Unitario Manual: ${Math.round(formData.overridePrice || 0).toLocaleString()} • x{formData.quantity} Unidades</p>
+                  ) : isFixedPrice ? (
                     <p>Precio Unitario: ${Math.round((formData.customer_type === 'final' ? selectedProduct?.priceFinal : selectedProduct?.pricePublisher) || 0).toLocaleString()} • x{formData.quantity} Unidades</p>
                   ) : (
                     <p>{quote.totalAreaM2.toFixed(3)} m² de Producción • x{formData.quantity} Unidades</p>
                   )}
                 </div>
-                {!isFixedPrice && (
+                {!isFixedPrice && formData.job_description !== 'Otro' && (
                   <div className="flex items-center justify-center gap-6 pt-2">
                     <span className="flex items-center gap-2 text-[10px]"><Box className="w-4 h-4 brand-text"/> IVA 19%</span>
                     <span className="flex items-center gap-2 text-[10px]"><TrendingUp className="w-4 h-4 brand-text"/> Margen DPM</span>
@@ -463,7 +492,12 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
                           {job.detailed_description}
                         </span>
                       )}
-                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">x{job.quantity} • {job.use_manual_meters ? `${job.manual_meters}m` : `${job.width}x${job.height}cm`}</span>
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                        x{job.quantity}
+                        {(!job.width || !job.height || job.width === 0 || job.height === 0) 
+                          ? '' 
+                          : ` • ${job.use_manual_meters ? `${job.manual_meters}m` : `${job.width}x${job.height}cm`}`}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">

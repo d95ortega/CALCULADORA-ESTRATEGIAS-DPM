@@ -105,7 +105,7 @@ const App: React.FC = () => {
   });
   const [newProduct, setNewProduct] = useState<Product>({ name: '', priceFinal: 0, pricePublisher: 0, designTime: 30, isFixedPrice: false });
   const [formData, setFormData] = useState<FormData>({
-    customer_type: 'final', job_description: '', width: 100, height: 100, quantity: 1,
+    customer_type: 'final', job_description: '', custom_job_description: '', width: 100, height: 100, quantity: 1,
     production_time: 30, cutting_hours: 0, laminate_speed: '0', installation: 0,
     urgency_percentage: 0, transport: 0, include_design: false, include_printing: true, ojalete_quantity: 0,
     include_tubes: true, include_sticks: false, sticks_quantity: 2,
@@ -416,10 +416,23 @@ const App: React.FC = () => {
 
   const handleSaveJob = () => {
     if (!formData.job_description) return;
-    const newJob: SavedJob = { ...formData, id: Math.random().toString(36).substr(2, 9), finalPrice: quote.finalPrice, createdAt: new Date().toLocaleString(), quoteResult: quote };
+    
+    let jobDesc = formData.job_description;
+    if (formData.job_description === 'Otro' && formData.custom_job_description) {
+      jobDesc = formData.custom_job_description;
+    }
+    
+    const newJob: SavedJob = { 
+      ...formData, 
+      job_description: jobDesc,
+      id: Math.random().toString(36).substr(2, 9), 
+      finalPrice: quote.finalPrice, 
+      createdAt: new Date().toLocaleString(), 
+      quoteResult: quote 
+    };
     setSavedJobs(prev => [newJob, ...prev]);
-    // Optionally reset overridePrice after saving
-    setFormData(prev => ({ ...prev, overridePrice: 0 }));
+    // Optionally reset overridePrice and custom_job_description after saving
+    setFormData(prev => ({ ...prev, overridePrice: 0, custom_job_description: '' }));
   };
 
   const saveCustomer = async (data: Omit<Customer, 'id'>) => {

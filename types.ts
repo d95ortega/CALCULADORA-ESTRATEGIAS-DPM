@@ -32,6 +32,7 @@ export interface Product {
 export interface FormData {
   customer_type: CustomerType;
   job_description: string;
+  custom_job_description?: string;
   width: number;
   height: number;
   quantity: number;

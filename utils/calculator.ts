@@ -15,6 +15,43 @@ export const calculateQuote = (data: FormData, params: any, products: Product[])
     calado_w, calado_h, letras3d_w, letras3d_h, letras3d_grosor, vinilo_w, vinilo_h, lona_w, lona_h, led_cm, fondo_w, fondo_h, include_power_supply
   } = data;
 
+  if (job_description === 'Otro') {
+    const unitPrice = data.overridePrice || 0;
+    const finalPriceTotal = unitPrice * quantity;
+    
+    return {
+      areaCm2: 0,
+      totalAreaCm2: 0,
+      totalAreaM2: 0,
+      rollWidth: 0,
+      rollAreaCm2: 0,
+      wasteAreaCm2: 0,
+      materialCost: finalPriceTotal,
+      wasteCostFromRoll: 0,
+      productionCost: 0,
+      designCost: 0,
+      cuttingCost: 0,
+      laminateTotal: 0,
+      taponCost: 0,
+      tubeCost: 0,
+      ojalesCost: 0,
+      sticksCost: 0,
+      subtotalBeforeWaste: finalPriceTotal,
+      wasteCost: 0,
+      totalBeforeMargin: finalPriceTotal,
+      urgencyCost: 0,
+      totalCostsWithUrgency: finalPriceTotal,
+      costWithMargin: finalPriceTotal,
+      ivaAmount: 0,
+      finalPrice: finalPriceTotal,
+      installation: 0,
+      transport: 0,
+      adjustedWidth: 0,
+      adjustedHeight: 0,
+      detailedCosts: {}
+    };
+  }
+
   const productData = products.find(p => p.name === job_description);
   const designTimeMinutes = productData?.designTime || 0;
 
