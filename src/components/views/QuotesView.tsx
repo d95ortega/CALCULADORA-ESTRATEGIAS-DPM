@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Search, RefreshCcw, Settings, MessageCircle, Trash2, FileText, Camera, X 
+  Search, RefreshCcw, Settings, MessageCircle, Trash2, FileText, Camera, X, Edit2 
 } from 'lucide-react';
 import { QuoteHistoryEntry, QuoteStatus } from '@/types';
 
@@ -193,10 +193,10 @@ const QuotesView: React.FC<QuotesViewProps> = ({
                         </button>
                         <button 
                           onClick={() => loadQuoteToCalculator(h)}
-                          title="Cargar Cotización"
-                          className="p-2 bg-white rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm border border-slate-100"
+                          title="Editar Cotización"
+                          className="p-2 bg-white rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-all shadow-sm border border-slate-100"
                         >
-                          <RefreshCcw className="w-3.5 h-3.5" />
+                          <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button 
                           onClick={() => {

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Calculator, Package, PenTool, MoveHorizontal, Hash, Wrench, Type, Zap, Save, RefreshCcw,
   Trash2, Plus, FileText, Search, UserCheck, DollarSign, Download, PlusCircle, Box, TrendingUp, ShieldCheck,
-  ChevronRight, Phone, MessageCircle, X, Power, Building2, Smartphone
+  ChevronRight, Phone, MessageCircle, X, Power, Building2, Smartphone, Edit2
 } from 'lucide-react';
 import { Product, FormData, SavedJob, Customer, QuoteStatus } from '@/types';
 const WhatsAppIcon = MessageCircle; // Simple alias if not available
@@ -36,6 +36,13 @@ interface CalculatorViewProps {
   sendWhatsApp: () => void;
   saveCustomer: (c: Omit<Customer, 'id'>) => void;
   setActiveView: (view: any) => void;
+  
+  editingDraftId: string | null;
+  setEditingDraftId: React.Dispatch<React.SetStateAction<string | null>>;
+  editingQuoteJobIndex: number | null;
+  setEditingQuoteJobIndex: React.Dispatch<React.SetStateAction<number | null>>;
+  editingQuoteId: string | null;
+  setEditingQuoteId: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 const CalculatorView: React.FC<CalculatorViewProps> = ({
@@ -44,7 +51,10 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
   savedJobs, setSavedJobs, saveToHistoryFromDraft,
   quoteJobs, setQuoteJobs, customerInfo, setCustomerInfo,
   initialStatus, setInitialStatus, isSaving, saveSuccess,
-  saveToHistory, generatePdf, sendWhatsApp, saveCustomer, setActiveView
+  saveToHistory, generatePdf, sendWhatsApp, saveCustomer, setActiveView,
+  editingDraftId, setEditingDraftId,
+  editingQuoteJobIndex, setEditingQuoteJobIndex,
+  editingQuoteId, setEditingQuoteId
 }) => {
   const selectedProduct = products.find(p => p.name === formData.job_description);
   const isFixedPrice = selectedProduct?.isFixedPrice || false;
@@ -84,6 +94,36 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
             </button>
           </div>
         </div>
+
+        {(editingDraftId || editingQuoteJobIndex !== null) && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-3 relative z-10"
+          >
+            <div className="flex items-center gap-2">
+              <Edit2 className="w-4 h-4 text-amber-600 animate-pulse shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase text-amber-800 tracking-wider">
+                  {editingDraftId ? "Editando Borrador" : "Editando Item Documento"}
+                </span>
+                <span className="text-[9px] text-amber-600 font-bold leading-none mt-0.5">
+                  {editingDraftId ? "Modificando un producto guardado en borradores" : "Modificando un item de la cotización final"}
+                </span>
+              </div>
+            </div>
+            <button 
+              onClick={() => {
+                setEditingDraftId(null);
+                setEditingQuoteJobIndex(null);
+                setFormData(prev => ({ ...prev, overridePrice: 0, custom_job_description: '' }));
+              }}
+              className="text-[9px] font-black uppercase tracking-widest text-amber-700 bg-white px-3 py-1.5 rounded-lg border border-amber-200 hover:bg-amber-100 transition-all active:scale-95 shrink-0"
+            >
+              Cancelar
+            </button>
+          </motion.div>
+        )}
 
         <div className="space-y-6 flex-1 relative z-10">
           <div className="space-y-2.5">
@@ -236,10 +276,16 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
           <div className="pt-6">
             <button 
               onClick={handleSaveJob} 
-              className="w-full brand-bg text-white font-black py-5 rounded-[1.5rem] shadow-2xl shadow-red-500/30 uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-4 active:scale-95 hover:scale-[1.02] transition-all duration-300 group"
+              className={`w-full font-black py-5 rounded-[1.5rem] shadow-2xl uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-4 active:scale-95 hover:scale-[1.02] transition-all duration-300 group ${
+                editingDraftId ? 'bg-amber-500 text-white shadow-amber-500/30' : 
+                editingQuoteJobIndex !== null ? 'bg-blue-600 text-white shadow-blue-600/30' : 
+                'brand-bg text-white shadow-red-500/30'
+              }`}
             >
               <Save className="w-6 h-6 group-hover:rotate-12 transition-transform" /> 
-              Agregar a Cotización
+              {editingDraftId ? "Actualizar Borrador" : 
+               editingQuoteJobIndex !== null ? "Actualizar Item" : 
+               "Agregar a Cotización"}
             </button>
           </div>
         </div>
@@ -504,6 +550,17 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
                     <span className="text-sm font-black text-slate-900 italic tracking-tighter">${Math.round(job.finalPrice).toLocaleString()}</span>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
                       <button 
+                        onClick={() => {
+                          setFormData({ ...job });
+                          setEditingDraftId(job.id);
+                          setEditingQuoteJobIndex(null);
+                        }}
+                        title="Editar Borrador"
+                        className="p-2.5 bg-white text-slate-400 rounded-xl shadow-sm border border-slate-100 hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all active:scale-90"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button 
                         onClick={() => saveToHistoryFromDraft(job)} 
                         disabled={isSaving}
                         title="Guardar en Historial" 
@@ -541,6 +598,29 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
             </div>
             <h2 className="text-sm font-black text-slate-800 italic uppercase tracking-widest">Documento Final</h2>
           </div>
+          
+          {editingQuoteId && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="mb-4 p-3.5 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between gap-2"
+            >
+              <div className="flex flex-col">
+                <span className="text-[9px] font-black uppercase text-blue-800 tracking-wider">Editando Cotización</span>
+                <span className="text-[8px] font-bold text-blue-600">Al guardar se actualizará la cotización existente</span>
+              </div>
+              <button 
+                onClick={() => {
+                  setEditingQuoteId(null);
+                  setQuoteJobs([]);
+                  setCustomerInfo({ id: '', name: '', phone: '', taxId: '', address: '', email: '', createdAt: '', quotesCount: 0 });
+                }}
+                className="text-[8px] font-black uppercase tracking-widest text-blue-700 bg-white px-2 py-1 rounded-lg border border-blue-200 hover:bg-blue-100 transition-all active:scale-95 shrink-0"
+              >
+                Cancelar
+              </button>
+            </motion.div>
+          )}
           
           <div className="space-y-4 mb-6">
             <div className="space-y-2">
@@ -628,7 +708,26 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
                         />
                       </div>
                     </div>
-                    <button onClick={() => setQuoteJobs(prev => prev.filter((_, i) => i !== idx))} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90"><X className="w-4 h-4"/></button>
+                    <div className="flex items-center gap-1">
+                      <button 
+                        onClick={() => {
+                          setFormData({ ...job });
+                          setEditingQuoteJobIndex(idx);
+                          setEditingDraftId(null);
+                        }}
+                        title="Editar Item"
+                        className="p-1.5 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all active:scale-90"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button 
+                        onClick={() => setQuoteJobs(prev => prev.filter((_, i) => i !== idx))} 
+                        title="Eliminar Item"
+                        className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </motion.div>
                 ))}
               </div>
@@ -679,10 +778,10 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
               <button 
                 onClick={() => saveToHistory(initialStatus)} 
                 disabled={quoteJobs.length === 0 || isSaving} 
-                className="w-full bg-slate-800 text-white font-black py-4 rounded-2xl text-[10px] tracking-[0.2em] uppercase flex items-center justify-center gap-3 active:scale-95 hover:bg-slate-900 transition-all shadow-xl disabled:grayscale disabled:opacity-50 group"
+                className={`w-full font-black py-4 rounded-2xl text-[10px] tracking-[0.2em] uppercase flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl disabled:grayscale disabled:opacity-50 group ${editingQuoteId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-800 hover:bg-slate-900'} text-white`}
               >
                 {isSaving ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />}
-                {saveSuccess ? "¡Guardado con éxito!" : "Solo Guardar"}
+                {saveSuccess ? "¡Guardado con éxito!" : (editingQuoteId ? "Actualizar Cotización" : "Solo Guardar")}
               </button>
               
               <button 
@@ -691,7 +790,7 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
                 className="w-full brand-bg text-white font-black py-4 rounded-2xl text-[10px] tracking-[0.2em] uppercase flex items-center justify-center gap-3 active:scale-95 hover:scale-[1.02] transition-all shadow-2xl shadow-red-500/30 disabled:grayscale disabled:opacity-50 group"
               >
                 {isSaving ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 group-hover:-translate-y-1 transition-transform" />}
-                Guardar & Exportar PDF
+                {editingQuoteId ? "Actualizar & Exportar PDF" : "Guardar & Exportar PDF"}
               </button>
               
               <button 
@@ -700,7 +799,7 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({
                 className="w-full whatsapp-btn text-white font-black py-4 rounded-2xl text-[10px] tracking-[0.2em] uppercase flex items-center justify-center gap-3 active:scale-95 hover:scale-[1.02] transition-all shadow-2xl shadow-green-500/30 disabled:grayscale disabled:opacity-50 group"
               >
                 {isSaving ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <WhatsAppIcon className="w-4 h-4 group-hover:rotate-12 transition-transform" />}
-                Enviar por WhatsApp
+                {editingQuoteId ? "Actualizar & Enviar WhatsApp" : "Enviar por WhatsApp"}
               </button>
             </div>
           </div>

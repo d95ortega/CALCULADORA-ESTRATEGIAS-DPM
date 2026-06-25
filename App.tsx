@@ -125,6 +125,9 @@ const App: React.FC = () => {
   });
   const [savedJobs, setSavedJobs] = useState<SavedJob[]>([]);
   const [quoteJobs, setQuoteJobs] = useState<SavedJob[]>([]);
+  const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
+  const [editingQuoteJobIndex, setEditingQuoteJobIndex] = useState<number | null>(null);
+  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
   const [customerInfo, setCustomerInfo] = useState({ id: '', name: '', phone: '', taxId: '', address: '', email: '' });
   const [customers, setCustomers] = useState<Customer[]>(() => {
     try {
@@ -422,15 +425,45 @@ const App: React.FC = () => {
       jobDesc = formData.custom_job_description;
     }
     
-    const newJob: SavedJob = { 
-      ...formData, 
-      job_description: jobDesc,
-      id: Math.random().toString(36).substr(2, 9), 
-      finalPrice: quote.finalPrice, 
-      createdAt: new Date().toLocaleString(), 
-      quoteResult: quote 
-    };
-    setSavedJobs(prev => [newJob, ...prev]);
+    if (editingDraftId) {
+      setSavedJobs(prev => prev.map(j => {
+        if (j.id === editingDraftId) {
+          return {
+            ...j,
+            ...formData,
+            job_description: jobDesc,
+            finalPrice: quote.finalPrice,
+            quoteResult: quote
+          };
+        }
+        return j;
+      }));
+      setEditingDraftId(null);
+    } else if (editingQuoteJobIndex !== null) {
+      setQuoteJobs(prev => prev.map((j, idx) => {
+        if (idx === editingQuoteJobIndex) {
+          return {
+            ...j,
+            ...formData,
+            job_description: jobDesc,
+            finalPrice: quote.finalPrice,
+            quoteResult: quote
+          };
+        }
+        return j;
+      }));
+      setEditingQuoteJobIndex(null);
+    } else {
+      const newJob: SavedJob = { 
+        ...formData, 
+        job_description: jobDesc,
+        id: Math.random().toString(36).substr(2, 9), 
+        finalPrice: quote.finalPrice, 
+        createdAt: new Date().toLocaleString(), 
+        quoteResult: quote 
+      };
+      setSavedJobs(prev => [newJob, ...prev]);
+    }
     // Optionally reset overridePrice and custom_job_description after saving
     setFormData(prev => ({ ...prev, overridePrice: 0, custom_job_description: '' }));
   };
@@ -502,31 +535,58 @@ const App: React.FC = () => {
     setIsSaving(true);
     const total = quoteJobs.reduce((s, j) => s + j.finalPrice, 0);
     const date = new Date().toISOString();
-    const newEntry: Omit<QuoteHistoryEntry, 'id'> = {
-      customerName: customerInfo.name || "CLIENTE GENERAL",
-      customerPhone: customerInfo.phone || "",
-      customerEmail: customerInfo.email || "",
-      customerAddress: customerInfo.address || "",
-      date: date,
-      items: [...quoteJobs],
-      total: total,
-      status: status,
-      isDraft: false
-    };
 
     try {
-      if (user && isAuthorized) {
-        const path = 'company_data/dpm/quotes';
-        const docRef = await addDoc(collection(db, path), sanitize(newEntry));
-        if (status === 'PAGADA') {
-          await convertToOrder({ ...newEntry, id: docRef.id } as QuoteHistoryEntry);
+      if (editingQuoteId) {
+        const updatedEntry: Partial<QuoteHistoryEntry> = {
+          customerName: customerInfo.name || "CLIENTE GENERAL",
+          customerPhone: customerInfo.phone || "",
+          customerEmail: customerInfo.email || "",
+          customerAddress: customerInfo.address || "",
+          items: [...quoteJobs],
+          total: total,
+          status: status,
+        };
+
+        if (user && isAuthorized) {
+          const path = 'company_data/dpm/quotes';
+          await updateDoc(doc(db, path, editingQuoteId), sanitize(updatedEntry));
+          if (status === 'PAGADA') {
+            await convertToOrder({ ...updatedEntry, id: editingQuoteId } as QuoteHistoryEntry);
+          }
+        } else {
+          setHistory(prev => prev.map(h => h.id === editingQuoteId ? { ...h, ...updatedEntry } : h));
+          if (status === 'PAGADA') {
+            setTimeout(() => convertToOrder({ ...updatedEntry, id: editingQuoteId } as QuoteHistoryEntry), 0);
+          }
         }
+        setEditingQuoteId(null);
       } else {
-        const id = Math.random().toString(36).substr(2, 9);
-        const entry = { ...newEntry, id } as QuoteHistoryEntry;
-        setHistory(prev => [entry, ...prev]);
-        if (status === 'PAGADA') {
-          setTimeout(() => convertToOrder(entry), 0);
+        const newEntry: Omit<QuoteHistoryEntry, 'id'> = {
+          customerName: customerInfo.name || "CLIENTE GENERAL",
+          customerPhone: customerInfo.phone || "",
+          customerEmail: customerInfo.email || "",
+          customerAddress: customerInfo.address || "",
+          date: date,
+          items: [...quoteJobs],
+          total: total,
+          status: status,
+          isDraft: false
+        };
+
+        if (user && isAuthorized) {
+          const path = 'company_data/dpm/quotes';
+          const docRef = await addDoc(collection(db, path), sanitize(newEntry));
+          if (status === 'PAGADA') {
+            await convertToOrder({ ...newEntry, id: docRef.id } as QuoteHistoryEntry);
+          }
+        } else {
+          const id = Math.random().toString(36).substr(2, 9);
+          const entry = { ...newEntry, id } as QuoteHistoryEntry;
+          setHistory(prev => [entry, ...prev]);
+          if (status === 'PAGADA') {
+            setTimeout(() => convertToOrder(entry), 0);
+          }
         }
       }
       
@@ -564,7 +624,7 @@ const App: React.FC = () => {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
-      if (user && isAuthorized) handleFirestoreError(error, OperationType.CREATE, 'company_data/dpm/quotes');
+      if (user && isAuthorized) handleFirestoreError(error, OperationType.WRITE, 'company_data/dpm/quotes');
       else console.error("Local save error", error);
     } finally {
       setIsSaving(false);
@@ -981,9 +1041,10 @@ const App: React.FC = () => {
       name: quote.customerName,
       phone: quote.customerPhone,
       taxId: '',
-      address: '',
-      email: ''
+      address: quote.customerAddress || '',
+      email: quote.customerEmail || ''
     });
+    setEditingQuoteId(quote.id);
     setActiveView('calculator');
   };
 
@@ -1349,6 +1410,12 @@ const App: React.FC = () => {
                 sendWhatsApp={sendWhatsApp}
                 saveCustomer={saveCustomer}
                 setActiveView={setActiveView}
+                editingDraftId={editingDraftId}
+                setEditingDraftId={setEditingDraftId}
+                editingQuoteJobIndex={editingQuoteJobIndex}
+                setEditingQuoteJobIndex={setEditingQuoteJobIndex}
+                editingQuoteId={editingQuoteId}
+                setEditingQuoteId={setEditingQuoteId}
               />
             )}
 
