@@ -67,7 +67,8 @@ const App: React.FC = () => {
   const [brand, setBrand] = useState(() => {
     try {
       const saved = localStorage.getItem('dpm_brand');
-      return saved ? JSON.parse(saved) : DEFAULT_BRAND;
+      const parsed = saved ? JSON.parse(saved) : null;
+      return parsed && typeof parsed === 'object' ? { ...DEFAULT_BRAND, ...parsed } : DEFAULT_BRAND;
     } catch { return DEFAULT_BRAND; }
   });
 
@@ -86,7 +87,8 @@ const App: React.FC = () => {
   const [params, setParams] = useState(() => {
     try {
       const saved = localStorage.getItem('dpm_params');
-      return saved ? JSON.parse(saved) : DEFAULT_PARAMS;
+      const parsed = saved ? JSON.parse(saved) : null;
+      return parsed && typeof parsed === 'object' ? { ...DEFAULT_PARAMS, ...parsed } : DEFAULT_PARAMS;
     } catch { return DEFAULT_PARAMS; }
   });
   const [products, setProducts] = useState<Product[]>(() => {
@@ -97,11 +99,11 @@ const App: React.FC = () => {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch {}
-    return Object.keys(PRODUCT_PRICES_FINAL).map(name => ({
+    return Object.keys(PRODUCT_PRICES_FINAL || {}).map(name => ({
       name,
-      priceFinal: PRODUCT_PRICES_FINAL[name],
-      pricePublisher: PRODUCT_PRICES_PUBLISHER[name] || PRODUCT_PRICES_FINAL[name],
-      designTime: PRODUCT_DESIGN_TIMES[name] || 0
+      priceFinal: PRODUCT_PRICES_FINAL ? PRODUCT_PRICES_FINAL[name] : 0,
+      pricePublisher: (PRODUCT_PRICES_PUBLISHER && PRODUCT_PRICES_PUBLISHER[name]) || (PRODUCT_PRICES_FINAL ? PRODUCT_PRICES_FINAL[name] : 0),
+      designTime: (PRODUCT_DESIGN_TIMES && PRODUCT_DESIGN_TIMES[name]) || 0
     }));
   });
   const [newProduct, setNewProduct] = useState<Product>({ name: '', priceFinal: 0, pricePublisher: 0, designTime: 30, isFixedPrice: false });
@@ -133,19 +135,22 @@ const App: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>(() => {
     try {
       const saved = localStorage.getItem('dpm_customers');
-      return saved ? JSON.parse(saved) : [];
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : [];
     } catch { return []; }
   });
   const [history, setHistory] = useState<QuoteHistoryEntry[]>(() => {
     try {
       const saved = localStorage.getItem('dpm_history');
-      return saved ? JSON.parse(saved) : [];
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : [];
     } catch { return []; }
   });
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
       const saved = localStorage.getItem('dpm_orders');
-      return saved ? JSON.parse(saved) : [];
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : [];
     } catch { return []; }
   });
   const [activeSettingsTab, setActiveSettingsTab] = useState<'products' | 'costs' | 'params' | 'brand' | 'users' | 'backup'>('products');
@@ -387,8 +392,8 @@ const App: React.FC = () => {
     localStorage.setItem('dpm_customers', JSON.stringify(customers));
     
     // Cache history and orders but strip photos to avoid 5MB quota
-    const historyShort = history.slice(0, 50).map(h => ({ ...h, deliveryPhotos: [] }));
-    const ordersShort = orders.slice(0, 50).map(o => ({ ...o, deliveryPhotos: [] }));
+    const historyShort = (Array.isArray(history) ? history : []).slice(0, 50).map(h => h ? { ...h, deliveryPhotos: [] } : h);
+    const ordersShort = (Array.isArray(orders) ? orders : []).slice(0, 50).map(o => o ? { ...o, deliveryPhotos: [] } : o);
     localStorage.setItem('dpm_history', JSON.stringify(historyShort));
     localStorage.setItem('dpm_orders', JSON.stringify(ordersShort));
     
