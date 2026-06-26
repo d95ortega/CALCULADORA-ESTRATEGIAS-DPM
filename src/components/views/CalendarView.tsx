@@ -62,46 +62,50 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     }> = [];
 
     // Add orders
-    orders.forEach(o => {
-      // Extract date from createdAt (e.g., "2026-06-25T...")
-      const createdDateStr = o.createdAt ? o.createdAt.split('T')[0] : '';
-      
-      jobsList.push({
-        id: o.id,
-        title: `Pedido ${o.id}`,
-        customerName: o.customerName,
-        customerPhone: o.customerPhone,
-        total: o.total,
-        status: o.status,
-        type: 'order',
-        createdAt: createdDateStr,
-        deliveryDate: o.deliveryDate || '',
-        acceptedDate: createdDateStr,
-        itemsCount: o.items?.length || 0,
-        originalStatus: o.status
+    if (orders && Array.isArray(orders)) {
+      orders.forEach(o => {
+        // Extract date from createdAt (e.g., "2026-06-25T...")
+        const createdDateStr = o.createdAt ? o.createdAt.split('T')[0] : '';
+        
+        jobsList.push({
+          id: o.id,
+          title: `Pedido ${o.id}`,
+          customerName: o.customerName,
+          customerPhone: o.customerPhone,
+          total: o.total,
+          status: o.status,
+          type: 'order',
+          createdAt: createdDateStr,
+          deliveryDate: o.deliveryDate || '',
+          acceptedDate: createdDateStr,
+          itemsCount: o.items?.length || 0,
+          originalStatus: o.status
+        });
       });
-    });
+    }
 
     // Add accepted quotes that don't have orders
-    quotes.forEach(q => {
-      if ((q.status === 'APROBADA' || q.status === 'PAGADA') && !q.orderId) {
-        const createdDateStr = q.date ? q.date.split('T')[0] : '';
-        jobsList.push({
-          id: q.id,
-          title: `Cotización ${q.id.substring(0, 8)}...`,
-          customerName: q.customerName,
-          customerPhone: q.customerPhone,
-          total: q.total,
-          status: q.status,
-          type: 'quote',
-          createdAt: createdDateStr,
-          deliveryDate: q.deliveryDate || '',
-          acceptedDate: createdDateStr,
-          itemsCount: q.items?.length || 0,
-          originalStatus: q.status
-        });
-      }
-    });
+    if (quotes && Array.isArray(quotes)) {
+      quotes.forEach(q => {
+        if (q && (q.status === 'APROBADA' || q.status === 'PAGADA') && !q.orderId) {
+          const createdDateStr = q.date ? q.date.split('T')[0] : '';
+          jobsList.push({
+            id: q.id,
+            title: `Cotización ${q.id.substring(0, 8)}...`,
+            customerName: q.customerName,
+            customerPhone: q.customerPhone,
+            total: q.total,
+            status: q.status,
+            type: 'quote',
+            createdAt: createdDateStr,
+            deliveryDate: q.deliveryDate || '',
+            acceptedDate: createdDateStr,
+            itemsCount: q.items?.length || 0,
+            originalStatus: q.status
+          });
+        }
+      });
+    }
 
     return jobsList;
   }, [orders, quotes]);

@@ -1269,12 +1269,14 @@ const App: React.FC = () => {
   const pendingNotificationCount = useMemo(() => {
     const todayStr = new Date().toISOString().split('T')[0];
     let count = 0;
-    orders.forEach(o => {
-      if (['ENTREGADO', 'RECIBIDO', 'ENVIADO'].includes(o.status)) return;
-      if (o.deliveryDate && o.deliveryDate <= todayStr) {
-        count++;
-      }
-    });
+    if (orders && Array.isArray(orders)) {
+      orders.forEach(o => {
+        if (o && ['ENTREGADO', 'RECIBIDO', 'ENVIADO'].includes(o.status)) return;
+        if (o && o.deliveryDate && o.deliveryDate <= todayStr) {
+          count++;
+        }
+      });
+    }
     return count;
   }, [orders]);
 
