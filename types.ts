@@ -155,6 +155,8 @@ export interface Order {
   updatedAt: string;
   notes?: string;
   deliveryPhotos?: string[];
+  deliveryDate?: string;
+  acceptedDate?: string;
 }
 
 export interface BrandSettings {
@@ -181,6 +183,8 @@ export interface QuoteHistoryEntry extends FormalQuote {
   status: QuoteStatus;
   isDraft?: boolean;
   deliveryPhotos?: string[];
+  deliveryDate?: string;
+  acceptedDate?: string;
 }
 
 export type HistoryEntry = QuoteHistoryEntry;

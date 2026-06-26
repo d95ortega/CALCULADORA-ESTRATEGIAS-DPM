@@ -5,7 +5,7 @@ import { FormData, SavedJob, Product, Customer, AcrylicType, BaseType, AcrylicMa
 import { calculateQuote } from './utils/calculator';
 import { PRODUCT_PRICES_FINAL, PRODUCT_PRICES_PUBLISHER, PRODUCT_DESIGN_TIMES, DEFAULT_PARAMS } from './constants';
 import { 
-  Calculator, Settings, Sparkles, Plus, FileText, X, Download, MessageCircle,
+  Calculator, Calendar, Bell, Settings, Sparkles, Plus, FileText, X, Download, MessageCircle,
   Loader2, Image as ImageIcon, Layers, Info, Trash2, Edit2, Save, CheckCircle2,
   PlusCircle, MessageSquare, UserCheck, Palette, Building2, UploadCloud, Smartphone, HelpCircle, User as UserIcon,
   DollarSign, Percent, Clock, Box, MapPin, Mail, Phone, Fingerprint, Users, Search, Ruler, Disc, Droplets, Zap, Wrench, Scissors, Layout, RefreshCcw, PieChart, Activity,
@@ -46,6 +46,7 @@ import SettingsView from './src/components/views/SettingsView';
 import QuotesView from './src/components/views/QuotesView';
 import OrdersView from './src/components/views/OrdersView';
 import CustomersView from './src/components/views/CustomersView';
+import CalendarView from './src/components/views/CalendarView';
 import PDFTemplate from './src/components/views/PDFTemplate';
 
 // Helper to remove undefined values for Firestore
@@ -195,7 +196,7 @@ const App: React.FC = () => {
   const [historyFilter, setHistoryFilter] = useState<QuoteStatus | 'TODAS'>('TODAS');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'calculator' | 'quotes' | 'orders' | 'customers' | 'settings'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'calculator' | 'quotes' | 'orders' | 'customers' | 'settings' | 'calendar'>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', role: 'user' as const });
 
@@ -753,6 +754,32 @@ const App: React.FC = () => {
     }
   };
 
+  const updateOrderDeliveryDate = async (orderId: string, deliveryDate: string) => {
+    if (user && isAuthorized) {
+      const path = `company_data/dpm/orders`;
+      try {
+        await updateDoc(doc(db, path, orderId), { deliveryDate, updatedAt: new Date().toISOString() });
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, path);
+      }
+    } else {
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, deliveryDate, updatedAt: new Date().toISOString() } : o));
+    }
+  };
+
+  const updateQuoteDeliveryDate = async (quoteId: string, deliveryDate: string) => {
+    if (user && isAuthorized) {
+      const path = `company_data/dpm/quotes`;
+      try {
+        await updateDoc(doc(db, path, quoteId), { deliveryDate });
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, path);
+      }
+    } else {
+      setHistory(prev => prev.map(h => h.id === quoteId ? { ...h, deliveryDate } : h));
+    }
+  };
+
   const updateQuoteStatus = async (quoteId: string, status: QuoteStatus) => {
     if (user && isAuthorized) {
       const path = `company_data/dpm/quotes`;
@@ -1239,6 +1266,18 @@ const App: React.FC = () => {
     );
   }
 
+  const pendingNotificationCount = useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    let count = 0;
+    orders.forEach(o => {
+      if (['ENTREGADO', 'RECIBIDO', 'ENVIADO'].includes(o.status)) return;
+      if (o.deliveryDate && o.deliveryDate <= todayStr) {
+        count++;
+      }
+    });
+    return count;
+  }, [orders]);
+
   return (
     <>
       <div className="min-h-screen bg-slate-50 text-slate-900 flex overflow-hidden" style={{ '--primary-color': brand.primaryColor } as React.CSSProperties}>
@@ -1292,6 +1331,14 @@ const App: React.FC = () => {
           >
             <Package className={`w-5 h-5 ${activeView === 'orders' ? 'text-white' : 'group-hover:text-white'}`} />
             {!sidebarCollapsed && <span className="text-[11px] font-black uppercase tracking-widest">Pedidos</span>}
+          </button>
+
+          <button 
+            onClick={() => setActiveView('calendar')}
+            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all group ${activeView === 'calendar' ? 'sidebar-item-active' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+          >
+            <Calendar className={`w-5 h-5 ${activeView === 'calendar' ? 'text-white' : 'group-hover:text-white'}`} />
+            {!sidebarCollapsed && <span className="text-[11px] font-black uppercase tracking-widest">Calendario</span>}
           </button>
 
           <button 
@@ -1356,11 +1403,24 @@ const App: React.FC = () => {
               {activeView === 'calculator' && <><Calculator className="brand-text w-5 h-5" /> Cotizador Maestro</>}
               {activeView === 'quotes' && <><FileText className="brand-text w-5 h-5" /> Historial de Cotizaciones</>}
               {activeView === 'orders' && <><Package className="brand-text w-5 h-5" /> Seguimiento de Pedidos</>}
+              {activeView === 'calendar' && <><Calendar className="brand-text w-5 h-5" /> Calendario de Entregas</>}
               {activeView === 'customers' && <><Users className="brand-text w-5 h-5" /> Base de Clientes</>}
               {activeView === 'settings' && <><Settings className="brand-text w-5 h-5" /> Configuración del Sistema</>}
             </h2>
           </div>
           <div className="flex items-center gap-4">
+            {pendingNotificationCount > 0 && (
+              <button 
+                onClick={() => setActiveView('calendar')}
+                className="relative p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center border border-rose-100"
+                title={`Tienes ${pendingNotificationCount} entregas pendientes para hoy o vencidas`}
+              >
+                <Bell className="w-4 h-4 animate-bounce" />
+                <span className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[8px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center leading-none">
+                  {pendingNotificationCount}
+                </span>
+              </button>
+            )}
             <div className="bg-slate-100 px-4 py-2 rounded-xl flex items-center gap-3">
               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Estado Sistema:</span>
               <span className="flex items-center gap-1.5 text-[8px] font-black text-green-600 uppercase">
@@ -1445,6 +1505,17 @@ const App: React.FC = () => {
                 generatePdf={generatePdf}
                 onAddPhoto={addOrderPhoto}
                 onRemovePhoto={removeOrderPhoto}
+              />
+            )}
+
+            {activeView === 'calendar' && (
+              <CalendarView 
+                orders={orders}
+                quotes={history}
+                updateOrderDeliveryDate={updateOrderDeliveryDate}
+                updateQuoteDeliveryDate={updateQuoteDeliveryDate}
+                updateOrderStatus={updateOrderStatus}
+                updateQuoteStatus={updateQuoteStatus}
               />
             )}
 

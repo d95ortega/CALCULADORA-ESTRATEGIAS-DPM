@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Package, Search, Clock, Trash2, ChevronRight, User, Phone, FileText, Camera, Image as ImageIcon, X, Tag 
+  Package, Search, Clock, Trash2, ChevronRight, User, Phone, FileText, Camera, Image as ImageIcon, X, Tag, Truck 
 } from 'lucide-react';
 import { Order, OrderStatus } from '@/types';
 
@@ -209,23 +209,32 @@ const OrdersView: React.FC<OrdersViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-4 border-t flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase">
-                        <Clock className="w-3 h-3" />
-                        {new Date(order.updatedAt).toLocaleDateString()}
+                    <div className="mt-4 pt-4 border-t flex flex-col gap-2.5">
+                      <div className="flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          <span>Act: {new Date(order.updatedAt).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-blue-600 font-black">
+                          <Truck className="w-3 h-3 shrink-0" />
+                          <span>{order.deliveryDate ? `Entrega: ${order.deliveryDate}` : 'Sin Programar'}</span>
+                        </div>
                       </div>
-                      <select 
-                        value={order.status}
-                        onChange={(e) => updateOrderStatus(order.id, e.target.value as OrderStatus)}
-                        className="bg-slate-50 border-none text-[8px] font-black uppercase tracking-wider rounded-lg px-2 py-1 outline-none ring-1 ring-slate-100 focus:ring-red-500 transition-all"
-                      >
-                        <option value="NUEVA">NUEVA</option>
-                        <option value="PRODUCCION">PRODUCCIÓN</option>
-                        <option value="TERMINADO">TERMINADO</option>
-                        <option value="ENTREGADO">ENTREGADO</option>
-                        <option value="RECIBIDO">RECIBIDO</option>
-                        <option value="ENVIADO">ENVIADO</option>
-                      </select>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[8px] font-black uppercase text-slate-300">Estado</span>
+                        <select 
+                          value={order.status}
+                          onChange={(e) => updateOrderStatus(order.id, e.target.value as OrderStatus)}
+                          className="bg-slate-50 border-none text-[8px] font-black uppercase tracking-wider rounded-lg px-2 py-1 outline-none ring-1 ring-slate-100 focus:ring-red-500 transition-all"
+                        >
+                          <option value="NUEVA">NUEVA</option>
+                          <option value="PRODUCCION">PRODUCCIÓN</option>
+                          <option value="TERMINADO">TERMINADO</option>
+                          <option value="ENTREGADO">ENTREGADO</option>
+                          <option value="RECIBIDO">RECIBIDO</option>
+                          <option value="ENVIADO">ENVIADO</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 ))}
