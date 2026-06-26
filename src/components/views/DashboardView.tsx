@@ -38,18 +38,25 @@ const DashboardView: React.FC<DashboardViewProps> = ({ orders, history, customer
             <Clock className="w-4 h-4 brand-text" /> Actividad Reciente
           </h3>
           <div className="space-y-4">
-            {history.slice(0, 5).map(h => (
-              <div key={h.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                <div className="flex items-center gap-4">
-                  <div className={`w-2 h-2 rounded-full ${h.status === 'PAGADA' ? 'bg-green-500' : 'bg-amber-500'}`} />
-                  <div>
-                    <p className="text-xs font-black uppercase">{h.customerName}</p>
-                    <p className="text-[9px] text-slate-400 font-bold uppercase">{new Date(h.createdAt || '').toLocaleDateString()}</p>
+            {history.slice(0, 5).map(h => {
+              const formatDate = (dateStr: any) => {
+                if (!dateStr) return 'N/A';
+                const d = new Date(dateStr);
+                return isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString();
+              };
+              return (
+                <div key={h.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-2 h-2 rounded-full ${h.status === 'PAGADA' ? 'bg-green-500' : 'bg-amber-500'}`} />
+                    <div>
+                      <p className="text-xs font-black uppercase">{h.customerName}</p>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase">{formatDate(h.createdAt)}</p>
+                    </div>
                   </div>
+                  <p className="text-xs font-black">${Math.round(h.total || 0).toLocaleString()}</p>
                 </div>
-                <p className="text-xs font-black">${Math.round(h.total || 0).toLocaleString()}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">

@@ -116,7 +116,11 @@ const QuotesView: React.FC<QuotesViewProps> = ({
                       </div>
                     </td>
                     <td className="p-4">
-                      <span className="text-[10px] text-slate-500 font-bold uppercase">{new Date(h.date).toLocaleDateString()}</span>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase">{(() => {
+                        if (!h.date) return 'N/A';
+                        const d = new Date(h.date);
+                        return isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString();
+                      })()}</span>
                     </td>
                     <td className="p-4">
                       <span className="text-[11px] font-black text-slate-900 italic tracking-tighter">${Math.round(h.total).toLocaleString()}</span>

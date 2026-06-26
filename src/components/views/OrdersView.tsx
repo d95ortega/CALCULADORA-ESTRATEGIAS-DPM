@@ -44,7 +44,7 @@ const OrdersView: React.FC<OrdersViewProps> = ({
             ? ['ENTREGADO', 'RECIBIDO', 'ENVIADO'] as OrderStatus[]
             : [columnStatus as OrderStatus];
             
-          const columnOrders = orders.filter(o => statusList.includes(o.status));
+          const columnOrders = (orders || []).filter(o => o && statusList.includes(o.status));
           
           return (
             <div key={columnStatus} className="flex flex-col gap-4">
@@ -144,7 +144,7 @@ const OrdersView: React.FC<OrdersViewProps> = ({
                       </div>
                       
                       <div className="pt-2 pb-1 border-t border-slate-50 space-y-2">
-                        {order.items.map((item, i) => (
+                        {(order.items || []).map((item, i) => (
                           <div key={i} className="flex flex-col bg-slate-50/50 p-2 rounded-xl">
                              <div className="flex justify-between items-start gap-2">
                                <span className="text-[9px] font-black text-slate-800 uppercase leading-tight line-clamp-1 flex-1">{item.job_description}</span>
@@ -213,7 +213,11 @@ const OrdersView: React.FC<OrdersViewProps> = ({
                       <div className="flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase">
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          <span>Act: {new Date(order.updatedAt).toLocaleDateString()}</span>
+                          <span>Act: {(() => {
+                            if (!order.updatedAt) return 'N/A';
+                            const d = new Date(order.updatedAt);
+                            return isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString();
+                          })()}</span>
                         </div>
                         <div className="flex items-center gap-1 text-blue-600 font-black">
                           <Truck className="w-3 h-3 shrink-0" />

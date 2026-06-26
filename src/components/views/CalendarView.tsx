@@ -64,6 +64,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     // Add orders
     if (orders && Array.isArray(orders)) {
       orders.forEach(o => {
+        if (!o) return;
         // Extract date from createdAt (e.g., "2026-06-25T...")
         const createdDateStr = o.createdAt ? o.createdAt.split('T')[0] : '';
         
