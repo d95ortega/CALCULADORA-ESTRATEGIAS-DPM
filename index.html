@@ -48,6 +48,20 @@
 </head>
 <body>
     <div id="root"></div>
+    <script>
+      // Automatically clean up and unregister any stale service workers
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (let registration of registrations) {
+            registration.unregister().then(function() {
+              console.log('Successfully unregistered stale service worker:', registration);
+            });
+          }
+        }).catch(function(err) {
+          console.error('Error unregistering service workers:', err);
+        });
+      }
+    </script>
     <script type="module" src="./index.tsx"></script>
 </body>
 </html>

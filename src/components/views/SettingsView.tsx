@@ -17,7 +17,7 @@ interface SettingsViewProps {
   handleProductUpdate: (idx: number, field: keyof Product, value: any) => void;
   brand: any;
   setBrand: React.Dispatch<React.SetStateAction<any>>;
-  authorizedUsers: User[];
+  authorizedUsers: any[];
   newUser: { email: string; role: string };
   setNewUser: React.Dispatch<React.SetStateAction<{ email: string; role: string }>>;
   handleAddAuthorizedUser: (e: React.FormEvent) => void;
@@ -215,7 +215,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="flex justify-between items-center">
                     <div className="flex items-center gap-1.5">
                         <label className="text-[10px] font-black text-slate-400 uppercase">Tarifa Hora Laboral ($)</label>
-                        <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Costo por hora de mano de obra del personal técnico." />
+                        <span title="Costo por hora de mano de obra del personal técnico."><HelpCircle className="w-3 h-3 text-slate-300 cursor-help" /></span>
                     </div>
                     <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Mano de Obra</span>
                     </div>
@@ -226,7 +226,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="flex justify-between items-center">
                     <div className="flex items-center gap-1.5">
                         <label className="text-[10px] font-black text-slate-400 uppercase">Porcentaje IVA (0.19)</label>
-                        <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Impuesto al Valor Agregado aplicado al precio final (ej: 0.19 para 19%)." />
+                        <span title="Impuesto al Valor Agregado aplicado al precio final (ej: 0.19 para 19%)."><HelpCircle className="w-3 h-3 text-slate-300 cursor-help" /></span>
                     </div>
                     <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Impuestos</span>
                     </div>
@@ -237,7 +237,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="flex justify-between items-center">
                     <div className="flex items-center gap-1.5">
                         <label className="text-[10px] font-black text-slate-400 uppercase">Margen Utilidad Final (0.35)</label>
-                        <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Porcentaje de ganancia esperado para clientes particulares." />
+                        <span title="Porcentaje de ganancia esperado para clientes particulares."><HelpCircle className="w-3 h-3 text-slate-300 cursor-help" /></span>
                     </div>
                     <span className="text-[8px] bg-green-50 px-1.5 py-0.5 rounded text-green-600 font-bold uppercase">Ganancia</span>
                     </div>
@@ -248,7 +248,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="flex justify-between items-center">
                     <div className="flex items-center gap-1.5">
                         <label className="text-[10px] font-black text-slate-400 uppercase">Margen Utilidad Publi (0.20)</label>
-                        <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Porcentaje de ganancia reducido para agencias o revendedores." />
+                        <span title="Porcentaje de ganancia reducido para agencias o revendedores."><HelpCircle className="w-3 h-3 text-slate-300 cursor-help" /></span>
                     </div>
                     <span className="text-[8px] bg-green-50 px-1.5 py-0.5 rounded text-green-600 font-bold uppercase">Ganancia</span>
                     </div>
@@ -259,7 +259,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="flex justify-between items-center">
                     <div className="flex items-center gap-1.5">
                         <label className="text-[10px] font-black text-slate-400 uppercase">Factor Vinilo (Acrílico)</label>
-                        <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Multiplicador aplicado al costo base del vinilo para cubrir instalación y adhesivos." />
+                        <span title="Multiplicador aplicado al costo base del vinilo para cubrir instalación y adhesivos."><HelpCircle className="w-3 h-3 text-slate-300 cursor-help" /></span>
                     </div>
                     <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Multiplicador</span>
                     </div>
@@ -270,7 +270,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="flex justify-between items-center">
                     <div className="flex items-center gap-1.5">
                         <label className="text-[10px] font-black text-slate-400 uppercase">Factor Lona (Acrílico)</label>
-                        <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Multiplicador aplicado al costo base de la lona para cubrir refuerzos y ojales." />
+                        <span title="Multiplicador aplicado al costo base de la lona para cubrir refuerzos y ojales."><HelpCircle className="w-3 h-3 text-slate-300 cursor-help" /></span>
                     </div>
                     <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Multiplicador</span>
                     </div>
@@ -281,7 +281,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="flex justify-between items-center">
                     <div className="flex items-center gap-1.5">
                         <label className="text-[10px] font-black text-slate-400 uppercase">Costo LED por cm ($)</label>
-                        <HelpCircle className="w-3 h-3 text-slate-300 cursor-help" title="Precio de venta por cada centímetro de cinta LED instalada." />
+                        <span title="Precio de venta por cada centímetro de cinta LED instalada."><HelpCircle className="w-3 h-3 text-slate-300 cursor-help" /></span>
                     </div>
                     <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">Material</span>
                     </div>
@@ -376,15 +376,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
               <div className="space-y-3">
                 {authorizedUsers.map(u => (
-                  <div key={u.id} className="bg-white p-4 rounded-2xl border flex items-center justify-between group">
+                  <div key={u.id || u.email} className="bg-white p-4 rounded-2xl border flex items-center justify-between group">
                     <div className="flex items-center gap-4">
-                      <div className={`w-2 h-2 rounded-full ${u.role === 'ADMIN' ? 'bg-red-500' : 'bg-blue-500'}`} />
+                      <div className={`w-2 h-2 rounded-full ${String(u.role).toUpperCase() === 'ADMIN' ? 'bg-red-500' : 'bg-blue-500'}`} />
                       <div>
                         <p className="text-xs font-black uppercase">{u.email}</p>
                         <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{u.role}</p>
                       </div>
                     </div>
-                    <button onClick={() => handleDeleteAuthorizedUser(u.id, u.email)} className="text-slate-200 hover:text-red-500 transition-colors">
+                    <button onClick={() => handleDeleteAuthorizedUser(u.id || '', u.email)} className="text-slate-200 hover:text-red-500 transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>

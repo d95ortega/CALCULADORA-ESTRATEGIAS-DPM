@@ -222,7 +222,7 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({
         ) : isLabel ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {/* Header Etiqueta */}
-            <div style={{ borderBottom: '2px solid #000', pb: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ borderBottom: '2px solid #000', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{brand.companyName || 'DPM'}</span>
               <span style={{ fontSize: '10px' }}>{new Date().toLocaleDateString()}</span>
             </div>
@@ -235,13 +235,13 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({
 
             {/* Datos Cliente */}
             <div>
-               <p style={{ fontSize: '10px', fontWeight: 'bold', color: '#666', borderBottom: '1px solid #eee', mb: '5px' }}>CLIENTE:</p>
+               <p style={{ fontSize: '10px', fontWeight: 'bold', color: '#666', borderBottom: '1px solid #eee', marginBottom: '5px' }}>CLIENTE:</p>
                <p style={{ fontSize: '14px', fontWeight: 'bold', textTransform: 'uppercase' }}>{customerInfo.name}</p>
             </div>
 
             {/* Items */}
             <div>
-               <p style={{ fontSize: '10px', fontWeight: 'bold', color: '#666', borderBottom: '1px solid #eee', mb: '5px' }}>DETALLE DEL TRABAJO:</p>
+               <p style={{ fontSize: '10px', fontWeight: 'bold', color: '#666', borderBottom: '1px solid #eee', marginBottom: '5px' }}>DETALLE DEL TRABAJO:</p>
                {quoteJobs.map((j, idx) => (
                  <div key={idx} style={{ marginBottom: '8px' }}>
                    <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0 }}>{j.job_description} (x{j.quantity})</p>
@@ -250,7 +250,7 @@ const PDFTemplate: React.FC<PDFTemplateProps> = ({
                ))}
             </div>
 
-            <div style={{ marginTop: 'auto', textAlign: 'center', borderTop: '1px dashed #ccc', pt: '10px' }}>
+            <div style={{ marginTop: 'auto', textAlign: 'center', borderTop: '1px dashed #ccc', paddingTop: '10px' }}>
               <p style={{ fontSize: '9px', fontStyle: 'italic', color: '#999' }}>Generado por Calculadora DPM v4</p>
             </div>
           </div>

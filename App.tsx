@@ -131,7 +131,7 @@ const App: React.FC = () => {
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
   const [editingQuoteJobIndex, setEditingQuoteJobIndex] = useState<number | null>(null);
   const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
-  const [customerInfo, setCustomerInfo] = useState({ id: '', name: '', phone: '', taxId: '', address: '', email: '' });
+  const [customerInfo, setCustomerInfo] = useState<Customer>({ id: '', name: '', phone: '', taxId: '', address: '', email: '', createdAt: '', quotesCount: 0 });
   const [customers, setCustomers] = useState<Customer[]>(() => {
     try {
       const saved = localStorage.getItem('dpm_customers');
@@ -721,7 +721,7 @@ const App: React.FC = () => {
       try {
         await setDoc(doc(db, orderPath, orderId), sanitize(newOrder));
         await updateDoc(doc(db, quotePath, quote.id), { orderId });
-        setActiveSettingsTab('orders');
+        setActiveView('orders');
       } catch (error) {
         handleFirestoreError(error, OperationType.CREATE, orderPath);
       }
@@ -729,7 +729,7 @@ const App: React.FC = () => {
       const finalOrder = { ...newOrder, id: orderId };
       setOrders(prev => [finalOrder, ...prev]);
       setHistory(prev => prev.map(h => h.id === quote.id ? { ...h, orderId } : h));
-      setActiveSettingsTab('orders');
+      setActiveView('orders');
     }
   };
 
@@ -796,7 +796,7 @@ const App: React.FC = () => {
           if (quote && !quote.orderId) {
             await convertToOrder(quote);
           } else {
-            setActiveSettingsTab('orders');
+            setActiveView('orders');
           }
         }
       } catch (error) {
@@ -810,7 +810,7 @@ const App: React.FC = () => {
           if (quote && !quote.orderId) {
             setTimeout(() => convertToOrder(quote), 0);
           } else {
-            setActiveSettingsTab('orders');
+            setActiveView('orders');
           }
         }
         return updated;
@@ -1074,7 +1074,9 @@ const App: React.FC = () => {
       phone: quote.customerPhone,
       taxId: '',
       address: quote.customerAddress || '',
-      email: quote.customerEmail || ''
+      email: quote.customerEmail || '',
+      createdAt: '',
+      quotesCount: 0
     });
     setEditingQuoteId(quote.id);
     setActiveView('calculator');
@@ -1087,7 +1089,9 @@ const App: React.FC = () => {
       phone: customer.phone,
       taxId: customer.taxId || '',
       address: customer.address || '',
-      email: customer.email || ''
+      email: customer.email || '',
+      createdAt: customer.createdAt || '',
+      quotesCount: customer.quotesCount || 0
     });
     setActiveView('calculator');
   };

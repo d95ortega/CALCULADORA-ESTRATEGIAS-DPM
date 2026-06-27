@@ -20,10 +20,12 @@ interface QuotesViewProps {
 }
 
 const QuotesView: React.FC<QuotesViewProps> = ({
-  history, historySearch, setHistorySearch, historyFilter, setHistoryFilter,
+  history = [], historySearch, setHistorySearch, historyFilter, setHistoryFilter,
   updateQuoteStatus, handleDeleteQuote, sendWhatsAppFromHistory, loadQuoteToCalculator,
   generatePdf, onAddPhoto, onRemovePhoto
 }) => {
+  const safeHistory = Array.isArray(history) ? history.filter(Boolean) : [];
+
   const handlePhotoUpload = (quoteId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -87,20 +89,25 @@ const QuotesView: React.FC<QuotesViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {history
+              {safeHistory
                 .filter(h => {
-                  const matchesSearch = h.customerName.toLowerCase().includes(historySearch.toLowerCase()) || 
-                                      h.items.some(i => 
-                                        i.job_description.toLowerCase().includes(historySearch.toLowerCase()) ||
-                                        (i.detailed_description && i.detailed_description.toLowerCase().includes(historySearch.toLowerCase()))
-                                      );
+                  if (!h) return false;
+                  const customerName = h.customerName || '';
+                  const items = h.items || [];
+                  const matchesSearch = customerName.toLowerCase().includes(historySearch.toLowerCase()) || 
+                                       items.some(i => 
+                                         i && (
+                                           (i.job_description || '').toLowerCase().includes(historySearch.toLowerCase()) ||
+                                           (i.detailed_description && (i.detailed_description || '').toLowerCase().includes(historySearch.toLowerCase()))
+                                         )
+                                       );
                   const matchesFilter = historyFilter === 'TODAS' || h.status === historyFilter;
                   return matchesSearch && matchesFilter;
                 })
                 .map((h, idx) => (
                   <tr key={h.id} className="hover:bg-slate-50/50 transition-all group">
                     <td className="p-4">
-                      <span className="text-[11px] font-black text-slate-400 tracking-tighter">#{String(history.length - idx).padStart(6, '0')}</span>
+                      <span className="text-[11px] font-black text-slate-400 tracking-tighter">#{String(safeHistory.length - idx).padStart(6, '0')}</span>
                     </td>
                     <td className="p-4">
                       <div className="flex flex-col">

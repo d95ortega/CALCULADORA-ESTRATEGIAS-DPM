@@ -11,14 +11,16 @@ interface CustomersViewProps {
   loadCustomerToCalculator: (c: Customer) => void;
 }
 
-const CustomersView: React.FC<CustomersViewProps> = ({ customers, saveCustomer, handleDeleteCustomer, loadCustomerToCalculator }) => {
+const CustomersView: React.FC<CustomersViewProps> = ({ customers = [], saveCustomer, handleDeleteCustomer, loadCustomerToCalculator }) => {
+  const safeCustomers = Array.isArray(customers) ? customers.filter(Boolean) : [];
+
   return (
     <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 pb-20">
       <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mb-8">
         <h4 className="text-sm font-black uppercase italic tracking-tighter flex items-center gap-2">
           <Users className="w-4 h-4 brand-text" /> Base de Datos de Clientes
         </h4>
-        <span className="bg-slate-100 px-3 py-1 rounded-full text-[10px] font-bold text-slate-500 uppercase">{customers.length} Registrados</span>
+        <span className="bg-slate-100 px-3 py-1 rounded-full text-[10px] font-bold text-slate-500 uppercase">{safeCustomers.length} Registrados</span>
       </div>
       
       <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm mb-8 space-y-4">
@@ -70,7 +72,7 @@ const CustomersView: React.FC<CustomersViewProps> = ({ customers, saveCustomer, 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {customers.map(c => (
+        {safeCustomers.map(c => (
           <div key={c.id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between group hover:border-red-200 transition-all">
             <div>
               <div className="flex justify-between items-start mb-4">
