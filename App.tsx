@@ -1159,6 +1159,20 @@ const App: React.FC = () => {
     handleLogoUpload(e);
   };
 
+  const pendingNotificationCount = useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    let count = 0;
+    if (orders && Array.isArray(orders)) {
+      orders.forEach(o => {
+        if (o && ['ENTREGADO', 'RECIBIDO', 'ENVIADO'].includes(o.status)) return;
+        if (o && o.deliveryDate && o.deliveryDate <= todayStr) {
+          count++;
+        }
+      });
+    }
+    return count;
+  }, [orders]);
+
   useEffect(() => {
     // Safety timeout: if auth is still not ready after 8 seconds, force it
     // so the user can at least see the login screen or restricted UI
@@ -1274,20 +1288,6 @@ const App: React.FC = () => {
       </div>
     );
   }
-
-  const pendingNotificationCount = useMemo(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    let count = 0;
-    if (orders && Array.isArray(orders)) {
-      orders.forEach(o => {
-        if (o && ['ENTREGADO', 'RECIBIDO', 'ENVIADO'].includes(o.status)) return;
-        if (o && o.deliveryDate && o.deliveryDate <= todayStr) {
-          count++;
-        }
-      });
-    }
-    return count;
-  }, [orders]);
 
   return (
     <>
